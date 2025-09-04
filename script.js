@@ -650,6 +650,7 @@ function resetToImageView() {
   // Reset to image view by default - helper function to avoid code duplication
   try {
     $('reviewPane').style.display = 'none';
+    $('asanaImg').style.display = 'block';
     $('asanaImg').hidden = false;
     $('toggleMediaBtn').textContent = 'Text';
   } catch (_) {
@@ -734,6 +735,7 @@ function renderCurrentQuestion() {
   $("asanaName").textContent = buildCombinedTitle(asana.name);
   const img = $("asanaImg");
   img.hidden = false;
+  img.style.display = 'block';
   img.alt = asana.name;
   img.onerror = function firstError() {
     // Try a project-level placeholder file if present; otherwise use inline data URL
@@ -789,6 +791,7 @@ function renderReviewQuestion() {
   $("asanaName").textContent = buildCombinedTitle(asana.name);
   const img = $("asanaImg");
   img.hidden = false;
+  img.style.display = 'block';
   img.alt = asana.name;
   img.onerror = function firstError() {
     img.onerror = function secondError() {
