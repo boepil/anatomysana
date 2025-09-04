@@ -507,16 +507,22 @@ const state = {
   score: 0,
   streak: 0,
   bestStreak: 0,
-  wrongAnswersPool: [], // items: { asanaId, chosenId, correctOption }
+  wrongAnswersPool: [], // items: { asanaId, chosenId, correctOption, category }
   answered: false,
   seenCounts: Object.create(null),
   remainingAsanaIds: [],
   currentAsanaId: null,
-  selectedRegion: "upper-body", // Manual region selection instead of automatic cycling
-  totalQuestionsAnswered: 0, // Track total questions across all regions
-  maxTotalQuestions: 36, // Maximum total questions (3 regions × 12 asanas)
-  completedRegions: new Set(), // Track which regions have been completed
+  selectedRegion: "upper-body", // Current category being tested
+  totalQuestionsAnswered: 0, // Track total questions across all categories
+  maxTotalQuestions: 36, // Maximum total questions (3 categories × 12 asanas)
+  completedRegions: new Set(), // Track which categories have been completed
   pausedPracticeState: null, // To store state when pausing practice
+  currentCategory: "upper-body", // Current category in the cycle
+  questionsInCurrentCategory: 0, // Questions answered in current category
+  maxQuestionsPerCategory: 12, // Questions per category
+  categorySequence: ["upper-body", "trunk", "lower-body"], // Order of categories
+  currentCategoryIndex: 0, // Index in category sequence
+  questionHistory: [], // Track all questions with category and correctness
 };
 
 function resetSession(preserveTotalQuestions = false) {
@@ -530,22 +536,44 @@ function resetSession(preserveTotalQuestions = false) {
   // Clear wrong answers only on full restart, not when changing region
   if (!preserveTotalQuestions) {
     state.wrongAnswersPool = [];
+    state.questionHistory = [];
   }
   state.seenCounts = Object.create(null);
   state.remainingAsanaIds = shuffleInPlace(ASANA_DATA.map((a) => a.id));
   state.currentAsanaId = null;
-  // Keep the selected region instead of resetting to 0
-  // Reset totalQuestionsAnswered unless explicitly preserving it (for region changes)
+  
+  // Reset category cycling system
   if (!preserveTotalQuestions) {
     state.totalQuestionsAnswered = 0;
-    state.completedRegions.clear(); // Reset completed regions for new session
+    state.completedRegions.clear();
+    state.currentCategory = "upper-body";
+    state.questionsInCurrentCategory = 0;
+    state.currentCategoryIndex = 0;
   }
+  
+  // Update selectedRegion to match currentCategory
+  state.selectedRegion = state.currentCategory;
+  
   updateScoreboard();
-  $("modeLabel").textContent = REGION_LABEL[state.selectedRegion];
+  $("modeLabel").textContent = REGION_LABEL[state.currentCategory];
+  
+  // Update UI elements to reflect current category
+  document.querySelectorAll('.region-option').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.region === state.currentCategory);
+  });
+  
+  const dropdown = document.getElementById('focusDropdown');
+  if (dropdown) {
+    dropdown.value = state.currentCategory;
+  }
+  
+  // Reset to image view by default when starting new session
+  resetToImageView();
+  
   $("summary").hidden = true;
   $("card").hidden = false;
-  $("backToQuizBtn").hidden = true; // NEW: Hide "Back to Quiz" button on fresh start
-  $("midReviewBtn").hidden = false; // NEW: Ensure "Review wrong answers" button is visible
+  $("backToQuizBtn").hidden = true;
+  $("midReviewBtn").hidden = false;
   
   renderCurrentQuestion();
 }
@@ -573,12 +601,19 @@ function startReview() {
       selectedRegion: state.selectedRegion,
       totalQuestionsAnswered: state.totalQuestionsAnswered,
       completedRegions: new Set(state.completedRegions),
+      currentCategory: state.currentCategory,
+      questionsInCurrentCategory: state.questionsInCurrentCategory,
+      currentCategoryIndex: state.currentCategoryIndex,
     };
   }
 
   state.mode = "review";
   state.currentIndex = 0;
   shuffleInPlace(state.wrongAnswersPool);
+  
+  // Reset to image view by default when starting review
+  resetToImageView();
+  
   $("summary").hidden = true;
   $("card").hidden = false;
   $("midReviewBtn").hidden = true; // NEW: Hide "Review wrong answers" button during review
@@ -593,6 +628,17 @@ function finishSession() {
   $("finalBestStreak").textContent = String(state.bestStreak);
   $("summaryReviewBtn").disabled = state.wrongAnswersPool.length === 0;
   renderFrequencyMatrix();
+}
+
+function resetToImageView() {
+  // Reset to image view by default - helper function to avoid code duplication
+  try {
+    $('reviewPane').style.display = 'none';
+    $('asanaImg').hidden = false;
+    $('toggleMediaBtn').textContent = 'Text';
+  } catch (_) {
+    // ignore if elements not found
+  }
 }
 
 function updateScoreboard() {
@@ -613,11 +659,16 @@ function updateScoreboard() {
     questionsCounter.classList.add("caution");
   }
   
-  // Update mid-session review button state (NEW)
+  // Update category progress
+  const categoryProgress = $("categoryProgress");
+  if (categoryProgress) {
+    categoryProgress.textContent = String(state.questionsInCurrentCategory) + "/12";
+  }
+  
+  // Update mid-session review button state
   const hasWrongAnswers = state.wrongAnswersPool.length > 0;
-  // Temporarily enable button for testing (remove this line later)
-  $("midReviewBtn").disabled = false; // !hasWrongAnswers;
-  console.log("updateScoreboard: wrongAnswersPool length:", state.wrongAnswersPool.length, "button disabled:", false);
+  $("midReviewBtn").disabled = !hasWrongAnswers;
+  console.log("updateScoreboard: wrongAnswersPool length:", state.wrongAnswersPool.length, "button disabled:", !hasWrongAnswers);
 }
 
 function getAsanaById(id) {
@@ -692,8 +743,8 @@ function renderCurrentQuestion() {
   $("nextBtn").hidden = true;
   state.answered = false;
 
-  // Use the manually selected region instead of cycling through regions
-  const region = state.selectedRegion;
+  // Use the current category for the question
+  const region = state.currentCategory;
   const options = shuffleInPlace([...getRegionOptions(asana, region)]);
   options.forEach((opt, idx) => {
     const id = `opt_${opt.id}`;
@@ -748,16 +799,22 @@ function renderReviewQuestion() {
   // ensure two-column layout in review mode
   $("card").classList.add("two-col");
 
-  // Use the region saved at the time of the wrong answer; fallback to current
-  const reviewRegion = reviewItem.region || state.selectedRegion;
-  // Reflect the region in the UI without mutating selectedRegion
+  // Use the category saved at the time of the wrong answer; fallback to current
+  const reviewCategory = reviewItem.category || state.currentCategory;
+  // Reflect the category in the UI without mutating currentCategory
   try {
-    $("modeLabel").textContent = REGION_LABEL[reviewRegion] || REGION_LABEL[state.selectedRegion];
+    $("modeLabel").textContent = REGION_LABEL[reviewCategory] || REGION_LABEL[state.currentCategory];
     document.querySelectorAll('.region-option').forEach(btn => {
-      btn.classList.toggle('active', btn.dataset.region === reviewRegion);
+      btn.classList.toggle('active', btn.dataset.region === reviewCategory);
     });
+    
+    // Update dropdown menu
+    const dropdown = document.getElementById('focusDropdown');
+    if (dropdown) {
+      dropdown.value = reviewCategory;
+    }
   } catch (_) {}
-  const options = getRegionOptions(asana, reviewRegion);
+  const options = getRegionOptions(asana, reviewCategory);
   options.forEach((opt, idx) => {
     const id = `opt_${opt.id}`;
     const placementLabel = String.fromCharCode(65 + idx);
@@ -833,10 +890,10 @@ function showExplanationsForCorrectText(correctText) {
   
   const terms = parseTermsFromText(correctText);
   
-  // Filter terms based on the review item's region when in review mode
+  // Filter terms based on the review item's category when in review mode
   const activeRegion = state.mode === 'review' && state.wrongAnswersPool[state.currentIndex]
-    ? (state.wrongAnswersPool[state.currentIndex].region || state.selectedRegion)
-    : state.selectedRegion;
+    ? (state.wrongAnswersPool[state.currentIndex].category || state.currentCategory)
+    : state.currentCategory;
   const regionTerms = filterTermsByRegion(terms, activeRegion);
   
   for (const term of regionTerms) {
@@ -943,7 +1000,7 @@ function selectAnswerAndGrade() {
   const chosenId = choice.value;
   
   // CRITICAL FIX: Use the region-specific options that are actually displayed
-  const regionOptions = getRegionOptions(asana, state.selectedRegion);
+  const regionOptions = getRegionOptions(asana, state.currentCategory);
   const correctOption = regionOptions.find((o) => o.correct);
   
   const allLabels = Array.from($("answers").getElementsByClassName("answer"));
@@ -968,8 +1025,20 @@ function selectAnswerAndGrade() {
   $("submitBtn").hidden = true;
   $("nextBtn").hidden = false;
 
-  // Increment total questions answered
+  // Increment counters
   state.totalQuestionsAnswered += 1;
+  state.questionsInCurrentCategory += 1;
+
+  // Track question in history
+  state.questionHistory.push({
+    asanaId: asana.id,
+    asanaName: asana.name,
+    category: state.currentCategory,
+    chosenId,
+    correctOption,
+    correct: correct,
+    questionNumber: state.totalQuestionsAnswered
+  });
 
   if (correct) {
     state.score += 10;
@@ -988,7 +1057,7 @@ function selectAnswerAndGrade() {
       asanaId: asana.id,
       chosenId,
       correctOption,
-      region: state.selectedRegion, // store region at time of answer
+      category: state.currentCategory, // store category at time of answer
     });
     // keep two-column layout (image left, explanations right)
     $("card").classList.add("two-col");
@@ -1014,6 +1083,9 @@ function backToQuiz() {
     state.selectedRegion = state.pausedPracticeState.selectedRegion;
     state.totalQuestionsAnswered = state.pausedPracticeState.totalQuestionsAnswered;
     state.completedRegions = new Set(state.pausedPracticeState.completedRegions);
+    state.currentCategory = state.pausedPracticeState.currentCategory;
+    state.questionsInCurrentCategory = state.pausedPracticeState.questionsInCurrentCategory;
+    state.currentCategoryIndex = state.pausedPracticeState.currentCategoryIndex;
     
     state.pausedPracticeState = null; // Clear the paused state
   } else {
@@ -1024,6 +1096,10 @@ function backToQuiz() {
   }
 
   state.mode = "practice";
+  
+  // Reset to image view by default when returning to quiz
+  resetToImageView();
+  
   $("midReviewBtn").hidden = false; // Show "Review wrong answers" button
   $("backToQuizBtn").hidden = true; // Hide "Back to Quiz" button
   $("summary").hidden = true;
@@ -1034,6 +1110,9 @@ function backToQuiz() {
 
 function onNext() {
   if (state.mode === 'review') {
+    // Reset to image view by default when moving to next review question
+    resetToImageView();
+    
     state.currentIndex++;
     if (state.currentIndex < state.wrongAnswersPool.length) {
       renderReviewQuestion();
@@ -1052,13 +1131,7 @@ function onNext() {
   }
 
   // Reset to image view by default
-  try {
-    $('reviewPane').style.display = 'none';
-    $('asanaImg').hidden = false;
-    $('toggleMediaBtn').textContent = 'Text';
-  } catch (_) {
-    // ignore if elements not found
-  }
+  resetToImageView();
 
   // Consume the current asana from the remaining queue
   if (state.currentAsanaId && state.remainingAsanaIds.length > 0 && state.remainingAsanaIds[0] === state.currentAsanaId) {
@@ -1072,29 +1145,60 @@ function onNext() {
     return;
   }
   
+  // Check if we've completed 12 questions in the current category
+  if (state.questionsInCurrentCategory >= state.maxQuestionsPerCategory) {
+    // Mark current category as completed
+    state.completedRegions.add(state.currentCategory);
+    
+    // Check if all categories have been completed
+    if (state.completedRegions.size >= state.categorySequence.length) {
+      // All categories completed - finish the session
+      finishSession();
+      return;
+    }
+    
+    // Move to next category
+    state.currentCategoryIndex = (state.currentCategoryIndex + 1) % state.categorySequence.length;
+    state.currentCategory = state.categorySequence[state.currentCategoryIndex];
+    state.selectedRegion = state.currentCategory;
+    state.questionsInCurrentCategory = 0;
+    
+    // Reset remaining asanas for new category
+    state.remainingAsanaIds = shuffleInPlace(ASANA_DATA.map((a) => a.id));
+    
+    // Show notification about category change
+    const currentCategoryName = REGION_LABEL[state.currentCategory];
+    $("feedback").textContent = `Switching to ${currentCategoryName} category`;
+    $("feedback").className = "feedback correct";
+    
+    // Update UI to reflect new category
+    $("modeLabel").textContent = currentCategoryName;
+    
+    // Update pill buttons
+    document.querySelectorAll('.region-option').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.region === state.currentCategory);
+    });
+    
+    // Update dropdown menu
+    const dropdown = document.getElementById('focusDropdown');
+    if (dropdown) {
+      dropdown.value = state.currentCategory;
+    }
+    
+    // Small delay to show the message before continuing
+    setTimeout(() => {
+      renderCurrentQuestion();
+    }, 1500);
+    return;
+  }
+  
+  // Continue with current category
   if (state.remainingAsanaIds.length > 0) {
     renderCurrentQuestion();
     return;
   }
   
-  // No more asanas in current region - automatically switch to next region
-  state.completedRegions.add(state.selectedRegion);
-  const nextRegion = getNextRegion(state.selectedRegion);
-  if (nextRegion) {
-    // Show notification about region change
-    const currentRegionName = REGION_LABEL[state.selectedRegion];
-    const nextRegionName = REGION_LABEL[nextRegion];
-    $("feedback").textContent = `Switching from ${currentRegionName} to ${nextRegionName}`;
-    $("feedback").className = "feedback correct";
-    
-    // Small delay to show the message before switching
-    setTimeout(() => {
-      changeFocusRegion(nextRegion);
-    }, 1500);
-    return;
-  }
-  
-  // No more regions available - finish the session
+  // No more asanas available - finish the session
   finishSession();
 }
 
@@ -1141,7 +1245,7 @@ function wireEvents() {
 
   
 
-  // Add focus region selection event handlers
+  // Add focus region selection event handlers for pill buttons
   document.querySelectorAll('.region-option').forEach(button => {
     button.addEventListener('click', (e) => {
       e.preventDefault();
@@ -1157,6 +1261,26 @@ function wireEvents() {
       }
     });
   });
+
+  // Add dropdown event handler
+  const dropdown = document.getElementById('focusDropdown');
+  if (dropdown) {
+    dropdown.addEventListener('change', (e) => {
+      const newRegion = e.target.value;
+      
+      // Check if changing region during an active session
+      if (state.currentIndex > 0 || state.answered) {
+        if (confirm('Changing the focus region will restart the current session. Continue?')) {
+          changeFocusRegion(newRegion);
+        } else {
+          // Reset dropdown to current region if user cancels
+          dropdown.value = state.currentCategory;
+        }
+      } else {
+        changeFocusRegion(newRegion);
+      }
+    });
+  }
 }
 
 function getNextRegion(currentRegion) {
@@ -1184,8 +1308,16 @@ function changeFocusRegion(newRegion) {
   const currentBestStreak = state.bestStreak;
   const currentTotalQuestions = state.totalQuestionsAnswered;
   
-  // Update the selected region
+  // Update the selected region and current category
   state.selectedRegion = newRegion;
+  state.currentCategory = newRegion;
+  
+  // Find the index of the new region in the category sequence
+  const newIndex = state.categorySequence.indexOf(newRegion);
+  if (newIndex !== -1) {
+    state.currentCategoryIndex = newIndex;
+  }
+  
   // Persist selection
   try { localStorage.setItem("anatomator:selectedRegion", newRegion); } catch (_) {}
   
@@ -1199,6 +1331,12 @@ function changeFocusRegion(newRegion) {
       btn.classList.add('active');
     }
   });
+  
+  // Update dropdown menu
+  const dropdown = document.getElementById('focusDropdown');
+  if (dropdown) {
+    dropdown.value = newRegion;
+  }
   
   // Restart the session with the new region but preserve score and total questions
   resetSession(true); // preserve total questions when changing regions
@@ -1238,11 +1376,23 @@ window.addEventListener("DOMContentLoaded", () => {
     const validRegions = ["upper-body", "trunk", "lower-body"];
     if (savedRegion && validRegions.includes(savedRegion)) {
       state.selectedRegion = savedRegion;
+      state.currentCategory = savedRegion;
+      // Find the index of the saved region in the category sequence
+      const savedIndex = state.categorySequence.indexOf(savedRegion);
+      if (savedIndex !== -1) {
+        state.currentCategoryIndex = savedIndex;
+      }
       // Reflect active state on buttons and label
       document.querySelectorAll('.region-option').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.region === savedRegion);
       });
       $("modeLabel").textContent = REGION_LABEL[savedRegion];
+      
+      // Update dropdown menu
+      const dropdown = document.getElementById('focusDropdown');
+      if (dropdown) {
+        dropdown.value = savedRegion;
+      }
     }
   } catch (_) {}
   resetSession();

@@ -49,6 +49,12 @@
       }
       .scoreboard > div { white-space: nowrap; }
       .scoreboard strong { font-weight: 600; }
+      
+      /* Category progress styling */
+      #categoryProgress {
+        color: #007bff;
+        font-weight: 600;
+      }
 
       /* Focus region selector: horizontal pill buttons */
       .focus-region-selector label { display: none; }
@@ -68,9 +74,18 @@
       }
       .region-menu .region-option.active { background: #e8f0fe; border-color: #9bb2f5; }
 
-      /* Optional: when dropdown is present, hide the pill menu */
-      .region-dropdown { width: 100%; min-height: var(--touch-min); padding: 8px !important; }
-      .region-menu.is-hidden { display: none !important; }
+      /* Show dropdown by default, hide pill menu */
+      .region-dropdown { 
+        width: 100%; 
+        min-height: var(--touch-min); 
+        padding: 8px !important; 
+        display: block;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        background: #f8f8f8;
+        font-size: var(--font-sm);
+      }
+      .region-menu { display: none !important; }
 
       /* Asana banner image reduced and collapsible */
       .banner { display: flex; justify-content: flex-start; width: 100%; height: 300px !important; }
@@ -156,8 +171,9 @@
         <div><strong>Score:</strong> <span id="score">0</span></div>
         <div><strong>Streak:</strong> <span id="streak">0</span></div>
         <div><strong>Best Streak:</strong> <span id="bestStreak">0</span></div>
-        <div><strong>Questions:</strong> <span id="questionsCounter">36</span></div>
-        <div><strong>:</strong> <span id="modeLabel">Practice</span></div>
+        <div><strong>Questions:</strong> <span id="questionsCounter">0/36</span></div>
+        <div><strong>Category:</strong> <span id="modeLabel">Upper Body</span></div>
+        <div><strong>Progress:</strong> <span id="categoryProgress">0/12</span></div>
       </section>
 
       <section class="controls">
@@ -175,7 +191,7 @@
             <div id="reviewPane" aria-live="polite"></div>
           </div>
           <section class="focus-region-selector">
-            <select id="focusDropdown" class="region-dropdown" aria-label="Focus Region" hidden>
+            <select id="focusDropdown" class="region-dropdown" aria-label="Focus Region">
               <option value="upper-body">Upper Body</option>
               <option value="trunk">Trunk</option>
               <option value="lower-body">Lower Body</option>
