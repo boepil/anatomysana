@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Anatomator – Yoga Anatomy Quiz</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="container">
+      <section class="focus-region-selector">
+        <label for="focusRegion">Focus Region:</label>
+        <div class="region-menu">
+          <button class="region-option active" data-region="upper-body">Upper Body</button>
+          <button class="region-option" data-region="trunk">Trunk</button>
+          <button class="region-option" data-region="lower-body">Lower Body</button>
+        </div>
+      </section>
+
+      <section class="scoreboard" aria-live="polite">
+        <div><strong>Score:</strong> <span id="score">0</span></div>
+        <div><strong>Streak:</strong> <span id="streak">0</span></div>
+        <div><strong>Best Streak:</strong> <span id="bestStreak">0</span></div>
+        <div><strong>Questions Left:</strong> <span id="questionsCounter">36</span></div>
+        <div><strong>Mode:</strong> <span id="modeLabel">Practice</span></div>
+      </section>
+
+      <section class="controls">
+        <button id="restartBtn" class="secondary">Restart</button>
+        <button id="midReviewBtn" class="secondary">Review wrong answers</button>
+        <button id="backToQuizBtn" class="secondary" hidden>Back to Quiz</button>
+      </section>
+
+      <section id="card" class="card" aria-live="polite">
+        <div class="asana">
+          <h2 id="asanaName" class="asana-title">Loading…</h2>
+          <div class="banner">
+            <img id="asanaImg" class="banner-image" alt="" hidden />
+          </div>
+        </div>
+
+        <form id="answers" class="answers" aria-label="Answer options">
+          <!-- Options injected here -->
+        </form>
+
+        <div class="actions">
+          <button id="submitBtn" class="primary">Submit</button>
+          <button id="prevBtn" class="secondary" hidden>Previous</button>
+          <button id="nextBtn" class="primary" hidden>Next</button>
+        </div>
+
+        <div class="details">
+          <div id="feedback" class="feedback" aria-live="polite"></div>
+          <div id="explanations" class="explanations" aria-live="polite"></div>
+        </div>
+      </section>
+
+      <section id="summary" class="summary" hidden>
+        <h3>Session Complete</h3>
+        <p><strong>Final Score:</strong> <span id="finalScore">0</span></p>
+        <p><strong>Best Streak:</strong> <span id="finalBestStreak">0</span></p>
+        <div class="controls">
+          <button id="summaryRestartBtn" class="primary">Restart</button>
+          <button id="summaryReviewBtn" class="secondary" disabled>Review wrong answers</button>
+        </div>
+        <h4>Asana Frequency</h4>
+        <div id="freqMatrix" class="matrix" aria-live="polite"></div>
+      </section>
+    </main>
+
+    <script src="script.js"></script>
+  </body>
+</html>

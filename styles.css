@@ -1,0 +1,177 @@
+:root {
+  --bg: #0f172a;
+  --panel: #111827;
+  --text: #e5e7eb;
+  --muted: #9ca3af;
+  --accent: #60a5fa;
+  --accent-2: #34d399;
+  --danger: #f87171;
+  --card: #0b1220;
+  --border: #1f2937;
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji"; background: linear-gradient(180deg, var(--bg), #0b1220 40%); color: var(--text); }
+
+.app-header, .app-footer { display: none; }
+
+.container { max-width: 900px; margin: 16px auto; padding: 0 12px 24px; }
+
+.focus-region-selector {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 12px;
+  text-align: center;
+}
+
+.focus-region-selector label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: var(--text);
+}
+
+.region-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 200px;
+  margin: 0 auto;
+}
+
+.region-option {
+  background: #0c1424;
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 12px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 120ms ease;
+  font-weight: 500;
+}
+
+.region-option:hover {
+  border-color: #2b3a55;
+  background: #0e1728;
+}
+
+.region-option.active {
+  background: linear-gradient(180deg, #1b2540, #172033);
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.scoreboard { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 12px; margin: 0 0 12px; }
+
+/* Questions counter warning styles */
+.scoreboard div:nth-child(4) {
+  position: relative;
+}
+
+.scoreboard div:nth-child(4).caution {
+  color: #fbbf24; /* amber-400 */
+}
+
+.scoreboard div:nth-child(4).warning {
+  color: #f87171; /* red-400 */
+  font-weight: 600;
+}
+
+.controls { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+
+.card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 0; box-shadow: 0 10px 30px rgba(0,0,0,0.25); overflow: hidden; }
+
+.asana h2 { margin: 0; }
+
+/* Title image banner */
+.banner { position: relative; width: min(320px, 100%); height: 320px; background: #0e1728; display: block; margin: 0 auto; }
+.banner-image { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; object-position: center center; background: #0e1728; }
+.card.two-col {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  grid-template-areas:
+    "media details"
+    "answers answers"
+    "actions actions";
+  gap: 12px;
+  align-items: start;
+}
+.card.two-col .asana { grid-area: media; }
+.card.two-col .banner { margin: 12px; }
+.card.two-col .details { grid-area: details; margin: 12px 12px 0 0; }
+.card.two-col .explanations { margin-top: 8px; max-height: 300px; overflow: auto; }
+.card.two-col .answers { grid-area: answers; }
+.card.two-col .actions { grid-area: actions; }
+.card.two-col .feedback { margin: 0; }
+
+/* Make overall card contents fit comfortably on typical screens */
+.banner { height: 280px; }
+.card.two-col .explanations .line { line-height: 1.35; }
+.banner-title { position: absolute; inset-inline: 0; bottom: 0; padding: 12px; font-size: 18px; font-weight: 800; line-height: 1.2; text-transform: uppercase; letter-spacing: 0.5px; background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.55) 60%, rgba(0,0,0,0.85) 100%); }
+
+.answers { display: grid; gap: 10px; margin: 12px; }
+.card.two-col .answers { margin: 0 12px 12px 12px; }
+.answer {
+  display: flex; align-items: flex-start; gap: 10px; background: #0e1728; border: 1px solid var(--border);
+  border-radius: 12px; padding: 12px; cursor: pointer; transition: border-color 120ms ease, transform 80ms ease;
+}
+.answer:hover { border-color: #2b3a55; }
+.answer input { margin-top: 3px; }
+.answer.correct { outline: 2px solid var(--accent-2); }
+.answer.incorrect { outline: 2px solid var(--danger); }
+
+.actions { display: flex; gap: 10px; margin: 10px 12px 16px; }
+/* Keep Next on the right, Prev to its left when both visible */
+.actions { justify-content: flex-start; }
+#submitBtn { order: 0; }
+#nextBtn { order: 1; }
+#prevBtn { order: 2; }
+
+.feedback { margin-top: 6px; font-weight: 600; }
+.feedback.correct { color: var(--accent-2); }
+.feedback.incorrect { color: var(--danger); }
+
+.explanations { margin: 4px 12px 12px; border-top: 1px solid var(--border); padding-top: 10px; }
+.explanations .line { color: var(--muted); margin: 6px 0; }
+.explanations .term { color: var(--text); font-weight: 600; }
+
+.summary { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-top: 16px; }
+.matrix { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 8px; margin-top: 10px; }
+.matrix .cell { background: #0e1728; border: 1px solid var(--border); border-radius: 8px; padding: 8px; text-align: center; }
+.matrix .value { font-weight: 700; font-size: 18px; }
+.matrix .label { font-size: 12px; color: var(--muted); }
+
+button {
+  appearance: none; border: 1px solid var(--border); color: var(--text); background: #0e1728; padding: 10px 14px;
+  border-radius: 10px; cursor: pointer; transition: transform 80ms ease, border-color 120ms ease, background 120ms ease;
+}
+button:hover { border-color: #2b3a55; }
+button:active { transform: translateY(1px); }
+button.primary { background: linear-gradient(180deg, #1b2540, #172033); border-color: #22304f; }
+button.secondary { background: #0c1424; }
+button:disabled { opacity: 0.6; cursor: not-allowed; }
+
+@media (max-width: 640px) { 
+  .scoreboard { grid-template-columns: repeat(3, minmax(0, 1fr)); } 
+  .banner { width: min(320px, 100%); height: 320px; } 
+  .banner-title { font-size: 16px; padding: 10px; letter-spacing: 0.4px; } 
+  
+  .focus-region-selector {
+    padding: 12px;
+  }
+  
+  .region-menu {
+    max-width: 100%;
+  }
+  
+  .region-option {
+    padding: 10px 12px;
+    font-size: 14px;
+  }
+}
+
+
