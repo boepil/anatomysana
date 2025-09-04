@@ -546,7 +546,7 @@ function resetSession(preserveTotalQuestions = false) {
   $("card").hidden = false;
   $("backToQuizBtn").hidden = true; // NEW: Hide "Back to Quiz" button on fresh start
   $("midReviewBtn").hidden = false; // NEW: Ensure "Review wrong answers" button is visible
-  $("prevBtn").hidden = true; // Hide Previous on fresh start
+  
   renderCurrentQuestion();
 }
 
@@ -583,7 +583,6 @@ function startReview() {
   $("card").hidden = false;
   $("midReviewBtn").hidden = true; // NEW: Hide "Review wrong answers" button during review
   $("backToQuizBtn").hidden = false; // NEW: Show "Back to Quiz" button
-  $("prevBtn").hidden = state.currentIndex === 0;
   renderReviewQuestion();
 }
 
@@ -691,7 +690,6 @@ function renderCurrentQuestion() {
   $("explanations").innerHTML = "";
   $("submitBtn").hidden = false;
   $("nextBtn").hidden = true;
-  $("prevBtn").hidden = true; // ensure Previous is hidden in practice mode
   state.answered = false;
 
   // Use the manually selected region instead of cycling through regions
@@ -747,7 +745,6 @@ function renderReviewQuestion() {
   $("explanations").innerHTML = "";
   $("submitBtn").hidden = true;
   $("nextBtn").hidden = false;
-  $("prevBtn").hidden = state.currentIndex === 0; // show prev except at first
   // ensure two-column layout in review mode
   $("card").classList.add("two-col");
 
@@ -1133,14 +1130,7 @@ function wireEvents() {
     backToQuiz();
   });
 
-  // NEW: Event listener for "Previous" button (review mode only)
-  $("prevBtn").addEventListener("click", (e) => {
-    e.preventDefault();
-    if (state.mode === 'review' && state.currentIndex > 0) {
-      state.currentIndex -= 1;
-      renderReviewQuestion();
-    }
-  });
+  
 
   // Add focus region selection event handlers
   document.querySelectorAll('.region-option').forEach(button => {

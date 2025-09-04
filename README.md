@@ -1,5 +1,12 @@
 Anatomator – Yoga Anatomy Quiz
 
+```cardlink
+url: https://boepil.github.io/anatomysana/
+title: "Anatomator – Yoga Anatomy Quiz"
+host: boepil.github.io
+```
+
+
 A small, self-contained web app to learn and test anatomical terms applied to yoga asanas. Runs fully offline with no backend.
 
 Usage

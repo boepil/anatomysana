@@ -16,7 +16,7 @@ body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Helve
 
 .app-header, .app-footer { display: none; }
 
-.container { max-width: 900px; margin: 16px auto; padding: 0 12px 24px; }
+.container { max-width: 480px; margin: 10px auto; padding: 0 12px 24px; }
 
 .focus-region-selector {
   background: var(--panel);
@@ -88,8 +88,8 @@ body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Helve
 .asana h2 { margin: 0; }
 
 /* Title image banner */
-.banner { position: relative; width: min(320px, 100%); height: 320px; background: #0e1728; display: block; margin: 0 auto; }
-.banner-image { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; object-position: center center; background: #0e1728; }
+.banner { position: relative; width: min(320px, 100%); height: 320px; background: #0e1728; display: block; margin: 0; }
+.banner-image { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; object-position: left center; background: #0e1728; }
 .card.two-col {
   display: grid;
   grid-template-columns: 320px 1fr;
