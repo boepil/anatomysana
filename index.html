@@ -68,13 +68,23 @@
       .region-menu.is-hidden { display: none !important; }
 
       /* Asana banner image reduced and collapsible */
-      .banner { display: flex; justify-content: center; }
+      .banner { display: flex; justify-content: flex-start; width: 100%; max-height: 480px; }
       .banner-image {
-        max-width: 40% !important; /* ~60% smaller */
+        max-width: 100% !important; /* occupy full width */
+        max-height: 100%; /* constrained by banner */
+        width: 100%;
         height: auto;
+        object-fit: contain;
         border-radius: 6px;
       }
       .banner-image.collapsed { max-height: 0 !important; overflow: hidden; padding: 0 !important; margin: 0 !important; }
+
+      /* Review text pane that can replace the image */
+      #reviewPane { display: none; max-width: 100%; max-height: 100%; text-align: left; padding: 0 !important; background: none; border: none; overflow: auto; font-size: 12px; line-height: 1.35; }
+      #reviewPane > div { margin-bottom: 4px; }
+      #reviewPane strong { font-weight: 700; }
+      .media-toggle { display: flex; justify-content: flex-end; margin-top: var(--space-xs); }
+      .media-toggle button { padding: 6px 10px !important; min-height: var(--touch-min); }
 
       /* Answers: full-width, touch-friendly */
       .answers { display: grid; gap: var(--space-sm); }
@@ -125,7 +135,7 @@
       @media (max-width: 360px) {
         :root { --font-xs: 11px; --font-sm: 12px; --font-md: 14px; --font-lg: 16px; }
         .region-menu .region-option { padding: 4px 8px !important; }
-        .banner-image { max-width: 48% !important; }
+        .banner-image { max-width: 100% !important; }
       }
     </style>
   </head>
@@ -164,6 +174,10 @@
           <h2 id="asanaName" class="asana-title">Loading…</h2>
           <div class="banner">
             <img id="asanaImg" class="banner-image" alt="" hidden />
+            <div id="reviewPane" aria-live="polite"></div>
+          </div>
+          <div class="media-toggle">
+            <button id="toggleMediaBtn" class="secondary" type="button">Show Text</button>
           </div>
         </div>
 
@@ -208,6 +222,8 @@
         const regionMenu = document.querySelector('.region-menu');
         const regionButtons = Array.from(document.querySelectorAll('.region-option'));
         const regionDropdown = document.getElementById('focusDropdown');
+        const reviewPane = document.getElementById('reviewPane');
+        const toggleMediaBtn = document.getElementById('toggleMediaBtn');
 
         // 1) Shorten titles like "Tadasana • Mountain Pose" -> "Mountain Pose"
         function shortenTitle(text) {
@@ -294,6 +310,63 @@
           regionDropdown.addEventListener('change', () => {
             const btn = regionButtons.find((b) => b.dataset.region === regionDropdown.value);
             if (btn) btn.click();
+          });
+        }
+
+        // 6) Text/Image toggle for review wrong answers to prevent overflow
+        function showReviewText(text) {
+          if (!reviewPane || !asanaImg) return;
+          // Normalize whitespace and dashes
+          const raw = (text || reviewPane.textContent || '').replace(/\s+/g, ' ').trim();
+
+          // Split into items like "Term — description" using a regex that
+          // finds a capitalized term followed by a dash and grabs until the next such term or end.
+          const itemRegex = /(\b[A-Z][A-Za-z()\s]*?)\s*[-–—]\s*([\s\S]*?)(?=(?:\b[A-Z][A-Za-z()\s]*?\s*[-–—]\s*)|$)/g;
+          const items = [];
+          let match;
+          while ((match = itemRegex.exec(raw)) !== null) {
+            const term = match[1].trim();
+            const desc = match[2].trim().replace(/\s+/g, ' ');
+            items.push({ term, desc });
+          }
+
+          // Fallback: if no items found, produce one line from raw
+          if (items.length === 0) {
+            reviewPane.textContent = raw;
+          } else {
+            const html = items
+              .map(({ term, desc }) => {
+                // Ensure an em dash and nice punctuation spacing
+                const dash = ' — ';
+                return `<div><strong>${term}</strong>${dash}${desc}</div>`;
+              })
+              .join('');
+            reviewPane.innerHTML = html;
+          }
+          reviewPane.style.display = 'block';
+          asanaImg.hidden = true;
+          if (toggleMediaBtn) toggleMediaBtn.textContent = 'Show Image';
+        }
+
+        function showImage() {
+          if (!reviewPane || !asanaImg) return;
+          reviewPane.style.display = 'none';
+          asanaImg.hidden = false;
+          if (toggleMediaBtn) toggleMediaBtn.textContent = 'Show Text';
+        }
+
+        if (toggleMediaBtn) {
+          toggleMediaBtn.addEventListener('click', () => {
+            const isShowingText = reviewPane && reviewPane.style.display !== 'none' && reviewPane.style.display !== '';
+            if (isShowingText) {
+              showImage();
+            } else {
+              // Prefer to reuse explanations or feedback content if available
+              const explanations = document.getElementById('explanations');
+              const feedback = document.getElementById('feedback');
+              const text = (explanations?.textContent || '').trim() || (feedback?.textContent || '').trim() || 'Review text unavailable.';
+              showReviewText(text);
+            }
           });
         }
       })();
