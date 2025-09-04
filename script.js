@@ -93,22 +93,22 @@ const ASANA_DATA = [
     quizOptions: [
       {
         id: "A",
-        text: "Lead arm: Shoulder abduction ~90°, scapular upward rotation, elbow extended, wrist neutral; rear arm: horizontal abduction, scapular retraction, elbow extended.",
+        text: "Lead arm: Shoulder abduction ~90°, scapular upward rotation, elbow extended, wrist neutral.",
         correct: true,
       },
       {
         id: "B",
-        text: "Lead arm: Shoulder flexion, scapular protraction, elbow extended; rear arm: extension, scapular depression, elbow extended.",
+        text: "Lead arm: Shoulder flexion, scapular protraction, elbow extended.",
         correct: false,
       },
       {
         id: "C",
-        text: "Lead arm: Shoulder adduction, scapular downward rotation, elbow flexed; rear arm: flexion, scapular upward rotation, elbow extended.",
+        text: "Lead arm: Shoulder adduction, scapular downward rotation, elbow flexed.",
         correct: false,
       },
       {
         id: "D",
-        text: "Lead arm: Shoulder horizontal adduction, scapular protraction, elbow flexed; rear arm: horizontal abduction, scapular retraction, elbow extended.",
+        text: "Lead arm: Shoulder horizontal adduction, scapular protraction, elbow flexed.",
         correct: false,
       },
     ],
