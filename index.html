@@ -165,7 +165,7 @@
       <section class="controls">
         <button id="restartBtn" class="secondary">Restart</button>
         <button id="midReviewBtn" class="secondary">Review wrong answers</button>
-        <button id="toggleMediaBtn" class="secondary" type="button">Show Text</button>
+        <button id="toggleMediaBtn" class="secondary" type="button">Text</button>
         <button id="backToQuizBtn" class="secondary" hidden>Back to Quiz</button>
       </section>
 
@@ -342,14 +342,14 @@
           }
           reviewPane.style.display = 'block';
           asanaImg.hidden = true;
-          if (toggleMediaBtn) toggleMediaBtn.textContent = 'Show Image';
+          if (toggleMediaBtn) toggleMediaBtn.textContent = 'Image';
         }
 
         function showImage() {
           if (!reviewPane || !asanaImg) return;
           reviewPane.style.display = 'none';
           asanaImg.hidden = false;
-          if (toggleMediaBtn) toggleMediaBtn.textContent = 'Show Text';
+          if (toggleMediaBtn) toggleMediaBtn.textContent = 'Text';
         }
 
         if (toggleMediaBtn) {
