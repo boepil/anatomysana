@@ -5,11 +5,139 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Anatomator – Yoga Anatomy Quiz</title>
     <link rel="stylesheet" href="styles.css" />
+    <style>
+      /* Mobile-first compact layout */
+      :root {
+        --space-xs: 4px;
+        --space-sm: 6px;
+        --space-md: 8px;
+        --font-xs: 12px;
+        --font-sm: 13px;
+        --font-md: 15px;
+        --font-lg: 18px;
+        --touch-min: 44px;
+      }
+
+      body, .container, section, .card, .controls, .actions, .details {
+        margin: var(--space-sm) !important;
+        padding: var(--space-sm) !important;
+      }
+
+      .container { padding-top: var(--space-md) !important; }
+
+      h1, h2, h3, h4 { margin: var(--space-sm) 0 !important; }
+      h1 { font-size: 1.2rem; }
+      h2 { font-size: var(--font-lg); }
+      h3 { font-size: var(--font-md); }
+      h4 { font-size: var(--font-sm); }
+      p, label, .scoreboard, button { font-size: var(--font-sm); }
+
+      /* Scoreboard as compact single-row header */
+      .scoreboard {
+        display: flex;
+        align-items: center;
+        gap: var(--space-md);
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        padding: var(--space-xs) var(--space-sm) !important;
+        margin-top: 0 !important;
+      }
+      .scoreboard > div { white-space: nowrap; }
+      .scoreboard strong { font-weight: 600; }
+
+      /* Focus region selector: horizontal pill buttons */
+      .focus-region-selector label { font-size: var(--font-sm); margin-bottom: var(--space-xs) !important; display: block; }
+      .region-menu {
+        display: flex;
+        gap: var(--space-sm);
+      }
+      .region-menu .region-option {
+        padding: 6px 10px !important;
+        border-radius: 999px !important;
+        border: 1px solid #ccc;
+        background: #f8f8f8;
+        min-height: var(--touch-min);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .region-menu .region-option.active { background: #e8f0fe; border-color: #9bb2f5; }
+
+      /* Optional: when dropdown is present, hide the pill menu */
+      .region-dropdown { width: 100%; min-height: var(--touch-min); padding: 8px !important; }
+      .region-menu.is-hidden { display: none !important; }
+
+      /* Asana banner image reduced and collapsible */
+      .banner { display: flex; justify-content: center; }
+      .banner-image {
+        max-width: 40% !important; /* ~60% smaller */
+        height: auto;
+        border-radius: 6px;
+      }
+      .banner-image.collapsed { max-height: 0 !important; overflow: hidden; padding: 0 !important; margin: 0 !important; }
+
+      /* Answers: full-width, touch-friendly */
+      .answers { display: grid; gap: var(--space-sm); }
+      .answers button,
+      .answers label,
+      .answers .option {
+        display: block;
+        width: 100%;
+        min-height: var(--touch-min);
+        padding: 10px !important;
+        text-align: left;
+      }
+
+      /* Actions: tighter; make Next sticky at bottom */
+      .actions { display: flex; gap: var(--space-sm); justify-content: space-between; }
+      #nextBtn {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        width: 100%;
+        border-radius: 0;
+        padding: 14px 16px !important;
+        min-height: var(--touch-min);
+        z-index: 1000;
+      }
+      /* Hide submit visually; logic will be triggered programmatically */
+      #submitBtn { display: none !important; }
+      /* Give content some bottom padding so sticky button doesn't cover content */
+      main.container { padding-bottom: 64px !important; }
+
+      /* Controls (restart/review) more compact */
+      .controls { display: flex; gap: var(--space-sm); flex-wrap: wrap; }
+      .controls button { padding: 8px 10px !important; min-height: var(--touch-min); }
+
+      /* Details: inline/compact feedback */
+      .details { margin-top: var(--space-sm) !important; }
+      .feedback { font-size: var(--font-sm); margin: var(--space-xs) 0 !important; }
+      .explanations { font-size: var(--font-sm); margin: var(--space-xs) 0 !important; }
+
+      /* General button sizing */
+      button.primary, button.secondary {
+        padding: 10px 12px !important;
+        min-height: var(--touch-min);
+      }
+
+      /* Ultra-compact on very small screens */
+      @media (max-width: 360px) {
+        :root { --font-xs: 11px; --font-sm: 12px; --font-md: 14px; --font-lg: 16px; }
+        .region-menu .region-option { padding: 4px 8px !important; }
+        .banner-image { max-width: 48% !important; }
+      }
+    </style>
   </head>
   <body>
     <main class="container">
       <section class="focus-region-selector">
         <label for="focusRegion">Focus Region:</label>
+        <select id="focusDropdown" class="region-dropdown" aria-label="Focus Region" hidden>
+          <option value="upper-body">Upper Body</option>
+          <option value="trunk">Trunk</option>
+          <option value="lower-body">Lower Body</option>
+        </select>
         <div class="region-menu">
           <button class="region-option active" data-region="upper-body">Upper Body</button>
           <button class="region-option" data-region="trunk">Trunk</button>
@@ -46,7 +174,7 @@
         <div class="actions">
           <button id="submitBtn" class="primary">Submit</button>
           <button id="prevBtn" class="secondary" hidden>Previous</button>
-          <button id="nextBtn" class="primary" hidden>Next</button>
+          <button id="nextBtn" class="primary">Next</button>
         </div>
 
         <div class="details">
@@ -69,5 +197,106 @@
     </main>
 
     <script src="script.js"></script>
+    <script>
+      // Post-load mobile enhancements without touching core logic
+      (function () {
+        const asanaNameEl = document.getElementById('asanaName');
+        const asanaImg = document.getElementById('asanaImg');
+        const scoreboard = document.querySelector('.scoreboard');
+        const submitBtn = document.getElementById('submitBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const regionMenu = document.querySelector('.region-menu');
+        const regionButtons = Array.from(document.querySelectorAll('.region-option'));
+        const regionDropdown = document.getElementById('focusDropdown');
+
+        // 1) Shorten titles like "Tadasana • Mountain Pose" -> "Mountain Pose"
+        function shortenTitle(text) {
+          if (!text) return text;
+          const dotIndex = text.indexOf('•');
+          if (dotIndex !== -1) {
+            const right = text.slice(dotIndex + 1).trim();
+            return right || text;
+          }
+          // Also handle hyphen separated formats
+          const hyphenIndex = text.indexOf(' - ');
+          if (hyphenIndex !== -1) {
+            return text.slice(hyphenIndex + 3).trim();
+          }
+          return text;
+        }
+
+        // Apply once on load and on future changes
+        if (asanaNameEl) {
+          // Helper to update without causing infinite mutation loops
+          const applyShortTitle = () => {
+            const current = asanaNameEl.textContent || '';
+            const shortened = shortenTitle(current);
+            if (shortened !== current) {
+              mo.disconnect();
+              asanaNameEl.textContent = shortened;
+              mo.observe(asanaNameEl, { childList: true, characterData: true, subtree: true });
+            }
+          };
+          const mo = new MutationObserver(() => {
+            applyShortTitle();
+          });
+          mo.observe(asanaNameEl, { childList: true, characterData: true, subtree: true });
+          applyShortTitle();
+        }
+
+        // 2) Make banner image collapsible/expandable on tap
+        if (asanaImg) {
+          asanaImg.addEventListener('click', () => {
+            asanaImg.classList.toggle('collapsed');
+          });
+          asanaImg.style.cursor = 'pointer';
+          asanaImg.title = 'Tap to collapse/expand';
+        }
+
+        // 3) Tighten scoreboard labels if too wide (optional abbreviations)
+        if (scoreboard) {
+          scoreboard.querySelectorAll('strong').forEach((el) => {
+            const map = {
+              'Score:': 'Score:',
+              'Streak:': 'Streak:',
+              'Best Streak:': 'Best:',
+              'Questions Left:': 'Left:',
+              'Mode:': 'Mode:'
+            };
+            const t = el.textContent?.trim();
+            if (t && map[t]) el.textContent = map[t] + ' ';
+          });
+        }
+
+        // 4) Always show Next; use it to trigger submit when appropriate
+        if (nextBtn && submitBtn) {
+          nextBtn.addEventListener('click', (e) => {
+            // If Submit is present in DOM (even if hidden), try to click it first
+            const isSubmitHidden = window.getComputedStyle(submitBtn).display === 'none';
+            if (!isSubmitHidden) {
+              submitBtn.click();
+              e.preventDefault();
+            }
+          });
+        }
+
+        // 5) Replace region pills with a dropdown on small screens
+        if (regionDropdown && regionMenu) {
+          // Mirror active button into dropdown initial value
+          const active = regionButtons.find((b) => b.classList.contains('active'));
+          if (active) regionDropdown.value = active.dataset.region;
+
+          // Show dropdown, hide pills
+          regionDropdown.hidden = false;
+          regionMenu.classList.add('is-hidden');
+
+          // When dropdown changes, simulate button click for existing app logic
+          regionDropdown.addEventListener('change', () => {
+            const btn = regionButtons.find((b) => b.dataset.region === regionDropdown.value);
+            if (btn) btn.click();
+          });
+        }
+      })();
+    </script>
   </body>
 </html>
