@@ -411,6 +411,22 @@ const TERM_DEFINITIONS = {
 const IMG_PLACEHOLDER_DATA_URL =
   'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMB/6WvE2QAAAAASUVORK5CYII=';
 
+// Sound effects
+const CORRECT_SOUND = new Audio('sound/cuckoo.wav');
+const INCORRECT_SOUND = new Audio('sound/Record_hit.wav');
+
+// Preload sounds and handle errors gracefully
+CORRECT_SOUND.preload = 'auto';
+INCORRECT_SOUND.preload = 'auto';
+
+CORRECT_SOUND.onerror = function() {
+  console.warn('Could not load correct answer sound');
+};
+
+INCORRECT_SOUND.onerror = function() {
+  console.warn('Could not load incorrect answer sound');
+};
+
 // Normalization and parsing helpers for combined terms
 const JOINT_BASE_MAP = {
   // Upper body
@@ -976,6 +992,19 @@ function toTitleCase(s) {
     .join(" ");
 }
 
+// Sound playing helper function
+function playSound(sound) {
+  try {
+    // Reset the sound to the beginning in case it was already played
+    sound.currentTime = 0;
+    sound.play().catch(error => {
+      console.warn('Could not play sound:', error);
+    });
+  } catch (error) {
+    console.warn('Error playing sound:', error);
+  }
+}
+
 function selectAnswerAndGrade() {
   if (state.answered) {
     return; // already graded
@@ -1041,12 +1070,16 @@ function selectAnswerAndGrade() {
     $("feedback").textContent = "Correct!";
     $("feedback").className = "feedback correct";
     $("explanations").innerHTML = "";
+    // Play correct answer sound
+    playSound(CORRECT_SOUND);
     // keep two-column layout; nothing to change on correct
   } else {
     state.streak = 0;
     // Only indicate incorrect; correct answer is already highlighted below
     $("feedback").textContent = "Incorrect.";
     $("feedback").className = "feedback incorrect";
+    // Play incorrect answer sound
+    playSound(INCORRECT_SOUND);
     state.wrongAnswersPool.push({
       asanaId: asana.id,
       chosenId,

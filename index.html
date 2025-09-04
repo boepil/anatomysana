@@ -151,9 +151,23 @@
             .banner-image.collapsed { max-height: 20px !important; overflow: hidden; padding: 0 !important; margin: 0 !important; }
 
       /* Review text pane that can replace the image */
-      #reviewPane { display: none; max-width: 100%; max-height: 100%; text-align: left; padding: 0 !important; background: none; border: none; overflow: auto; font-size: 12px; line-height: 1.35; }
+      #reviewPane { 
+        display: none; 
+        max-width: 100%; 
+        max-height: 100%; 
+        text-align: left; 
+        padding: 16px !important; 
+        background: white; 
+        border: 1px solid #ddd; 
+        border-radius: 6px;
+        overflow: auto; 
+        font-size: 12px; 
+        line-height: 1.35; 
+        color: #333;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      }
       #reviewPane > div { margin-bottom: 4px; }
-      #reviewPane strong { font-weight: 700; }
+      #reviewPane strong { font-weight: 700; color: #000; }
       .media-toggle { display: flex; justify-content: flex-end; margin-top: var(--space-xs); }
       .media-toggle button { padding: 6px 10px !important; min-height: var(--touch-min); }
 
@@ -431,14 +445,17 @@
               .join('');
             reviewPane.innerHTML = html;
           }
+          // Hide image completely and show text with proper styling
+          asanaImg.style.display = 'none';
           reviewPane.style.display = 'block';
-          asanaImg.hidden = true;
           if (toggleMediaBtn) toggleMediaBtn.textContent = 'Image';
         }
 
         function showImage() {
           if (!reviewPane || !asanaImg) return;
+          // Hide text completely and show image
           reviewPane.style.display = 'none';
+          asanaImg.style.display = 'block';
           asanaImg.hidden = false;
           if (toggleMediaBtn) toggleMediaBtn.textContent = 'Text';
         }
