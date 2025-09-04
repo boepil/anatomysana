@@ -659,11 +659,6 @@ function updateScoreboard() {
     questionsCounter.classList.add("caution");
   }
   
-  // Update category progress
-  const categoryProgress = $("categoryProgress");
-  if (categoryProgress) {
-    categoryProgress.textContent = String(state.questionsInCurrentCategory) + "/12";
-  }
   
   // Update mid-session review button state
   const hasWrongAnswers = state.wrongAnswersPool.length > 0;
