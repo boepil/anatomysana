@@ -46,7 +46,7 @@
       .scoreboard strong { font-weight: 600; }
 
       /* Focus region selector: horizontal pill buttons */
-      .focus-region-selector label { font-size: var(--font-sm); margin-bottom: var(--space-xs) !important; display: block; }
+      .focus-region-selector label { display: none; }
       .region-menu {
         display: flex;
         gap: var(--space-sm);
@@ -142,7 +142,6 @@
   <body>
     <main class="container">
       <section class="focus-region-selector">
-        <label for="focusRegion">Focus Region:</label>
         <select id="focusDropdown" class="region-dropdown" aria-label="Focus Region" hidden>
           <option value="upper-body">Upper Body</option>
           <option value="trunk">Trunk</option>
@@ -166,6 +165,7 @@
       <section class="controls">
         <button id="restartBtn" class="secondary">Restart</button>
         <button id="midReviewBtn" class="secondary">Review wrong answers</button>
+        <button id="toggleMediaBtn" class="secondary" type="button">Show Text</button>
         <button id="backToQuizBtn" class="secondary" hidden>Back to Quiz</button>
       </section>
 
@@ -175,9 +175,6 @@
           <div class="banner">
             <img id="asanaImg" class="banner-image" alt="" hidden />
             <div id="reviewPane" aria-live="polite"></div>
-          </div>
-          <div class="media-toggle">
-            <button id="toggleMediaBtn" class="secondary" type="button">Show Text</button>
           </div>
         </div>
 
