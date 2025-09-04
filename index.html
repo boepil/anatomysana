@@ -97,6 +97,10 @@
         padding: 10px !important;
         text-align: left;
       }
+      /* Keep radio and text inline within each answer */
+      .answers label { display: flex !important; align-items: center; gap: 10px; }
+      .answers label input[type="radio"] { display: inline-block; margin: 0 8px 0 0; }
+      .answers label > * { vertical-align: middle; }
 
       /* Actions: tighter; make Next sticky at bottom */
       .actions { display: flex; gap: var(--space-sm); justify-content: space-between; }
@@ -120,10 +124,12 @@
       .controls { display: flex; gap: var(--space-sm); flex-wrap: wrap; }
       .controls button { padding: 8px 10px !important; min-height: var(--touch-min); }
 
-      /* Details: inline/compact feedback */
-      .details { margin-top: var(--space-sm) !important; }
-      .feedback { font-size: var(--font-sm); margin: var(--space-xs) 0 !important; }
-      .explanations { font-size: var(--font-sm); margin: var(--space-xs) 0 !important; }
+      /* Hide right-side feedback/explanations block to save space */
+      .details { display: none !important; }
+      .feedback, .explanations { display: none !important; }
+
+      /* Hide any Mode label anywhere */
+      #modeLabel { display: none !important; }
 
       /* General button sizing */
       button.primary, button.secondary {
@@ -238,23 +244,22 @@
           return text;
         }
 
-        // Apply once on load and on future changes
+        // Apply once on load; avoid observing to prevent loops/freezes
         if (asanaNameEl) {
-          // Helper to update without causing infinite mutation loops
           const applyShortTitle = () => {
             const current = asanaNameEl.textContent || '';
             const shortened = shortenTitle(current);
             if (shortened !== current) {
-              mo.disconnect();
               asanaNameEl.textContent = shortened;
-              mo.observe(asanaNameEl, { childList: true, characterData: true, subtree: true });
             }
           };
-          const mo = new MutationObserver(() => {
+          // Try a few times during initial load to catch async population
+          let tries = 0;
+          const timer = setInterval(() => {
             applyShortTitle();
-          });
-          mo.observe(asanaNameEl, { childList: true, characterData: true, subtree: true });
-          applyShortTitle();
+            tries += 1;
+            if (tries >= 20) clearInterval(timer); // ~2s max
+          }, 100);
         }
 
         // 2) Make banner image collapsible/expandable on tap
@@ -266,48 +271,32 @@
           asanaImg.title = 'Tap to collapse/expand';
         }
 
-        // 3) Tighten scoreboard labels if too wide (optional abbreviations)
-        if (scoreboard) {
-          scoreboard.querySelectorAll('strong').forEach((el) => {
-            const map = {
-              'Score:': 'Score:',
-              'Streak:': 'Streak:',
-              'Best Streak:': 'Best:',
-              'Questions Left:': 'Left:',
-              'Mode:': 'Mode:'
-            };
-            const t = el.textContent?.trim();
-            if (t && map[t]) el.textContent = map[t] + ' ';
-          });
-        }
+        // 3) Skip scoreboard relabeling to avoid interfering with core logic
 
         // 4) Always show Next; use it to trigger submit when appropriate
         if (nextBtn && submitBtn) {
           nextBtn.addEventListener('click', (e) => {
-            // If Submit is present in DOM (even if hidden), try to click it first
-            const isSubmitHidden = window.getComputedStyle(submitBtn).display === 'none';
-            if (!isSubmitHidden) {
-              submitBtn.click();
-              e.preventDefault();
-            }
+            // Always trigger the app's submit logic. If disabled, temporarily enable to fire click.
+            const wasDisabled = submitBtn.disabled;
+            if (wasDisabled) submitBtn.disabled = false;
+            try { submitBtn.click(); } catch (_) {}
+            if (wasDisabled) submitBtn.disabled = true;
+            e.preventDefault();
           });
         }
 
-        // 5) Replace region pills with a dropdown on small screens
+        // 5) Replace region pills with a dropdown on small screens (non-intrusive)
         if (regionDropdown && regionMenu) {
-          // Mirror active button into dropdown initial value
-          const active = regionButtons.find((b) => b.classList.contains('active'));
-          if (active) regionDropdown.value = active.dataset.region;
-
-          // Show dropdown, hide pills
-          regionDropdown.hidden = false;
-          regionMenu.classList.add('is-hidden');
-
-          // When dropdown changes, simulate button click for existing app logic
-          regionDropdown.addEventListener('change', () => {
-            const btn = regionButtons.find((b) => b.dataset.region === regionDropdown.value);
-            if (btn) btn.click();
-          });
+          try {
+            const active = regionButtons.find((b) => b.classList.contains('active'));
+            if (active) regionDropdown.value = active.dataset.region;
+            regionDropdown.hidden = false;
+            regionMenu.classList.add('is-hidden');
+            regionDropdown.addEventListener('change', () => {
+              const btn = regionButtons.find((b) => b.dataset.region === regionDropdown.value);
+              if (btn) btn.dispatchEvent(new Event('click', { bubbles: true }));
+            });
+          } catch (_) {}
         }
 
         // 6) Text/Image toggle for review wrong answers to prevent overflow
