@@ -1051,6 +1051,15 @@ function onNext() {
     return;
   }
 
+  // Reset to image view by default
+  try {
+    $('reviewPane').style.display = 'none';
+    $('asanaImg').hidden = false;
+    $('toggleMediaBtn').textContent = 'Text';
+  } catch (_) {
+    // ignore if elements not found
+  }
+
   // Consume the current asana from the remaining queue
   if (state.currentAsanaId && state.remainingAsanaIds.length > 0 && state.remainingAsanaIds[0] === state.currentAsanaId) {
     state.remainingAsanaIds.shift();
