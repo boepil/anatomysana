@@ -172,8 +172,8 @@
         <div><strong>Streak:</strong> <span id="streak">0</span></div>
         <div><strong>Best Streak:</strong> <span id="bestStreak">0</span></div>
         <div><strong>Questions:</strong> <span id="questionsCounter">0/36</span></div>
-        <div><strong>Category:</strong> <span id="modeLabel">Upper Body</span></div>
-        <div><strong>Progress:</strong> <span id="categoryProgress">0/12</span></div>
+        <div><span id="modeLabel">Upper Body</span></div>
+        <div><span id="categoryProgress">0/12</span></div>
       </section>
 
       <section class="controls">
@@ -248,18 +248,18 @@
         const reviewPane = document.getElementById('reviewPane');
         const toggleMediaBtn = document.getElementById('toggleMediaBtn');
 
-        // 1) Shorten titles like "Tadasana • Mountain Pose" -> "Mountain Pose"
+        // 1) Keep only Sanskrit names like "Tadasana • Mountain Pose" -> "Tadasana"
         function shortenTitle(text) {
           if (!text) return text;
           const dotIndex = text.indexOf('•');
           if (dotIndex !== -1) {
-            const right = text.slice(dotIndex + 1).trim();
-            return right || text;
+            const left = text.slice(0, dotIndex).trim();
+            return left || text;
           }
           // Also handle hyphen separated formats
           const hyphenIndex = text.indexOf(' - ');
           if (hyphenIndex !== -1) {
-            return text.slice(hyphenIndex + 3).trim();
+            return text.slice(0, hyphenIndex).trim();
           }
           return text;
         }

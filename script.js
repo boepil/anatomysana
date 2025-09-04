@@ -703,8 +703,7 @@ function buildCombinedTitle(name) {
   const match = name.match(/^(.*?)\s*\(([^)]+)\)/);
   if (match) {
     const sanskrit = match[1].trim();
-    const english = match[2].trim();
-    return `${sanskrit} • ${english}`;
+    return sanskrit; // Return only the Sanskrit name
   }
   return name;
 }
