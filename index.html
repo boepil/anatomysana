@@ -73,7 +73,7 @@
       .region-menu.is-hidden { display: none !important; }
 
       /* Asana banner image reduced and collapsible */
-      .banner { display: flex; justify-content: flex-start; width: 100%; height: 470px !important; }
+      .banner { display: flex; justify-content: flex-start; width: 100%; height: 300px !important; }
       .banner-image {
         max-width: 100% !important; /* occupy full width */
         max-height: 100%; /* constrained by banner */
@@ -152,19 +152,6 @@
   </head>
   <body>
     <main class="container">
-      <section class="focus-region-selector">
-        <select id="focusDropdown" class="region-dropdown" aria-label="Focus Region" hidden>
-          <option value="upper-body">Upper Body</option>
-          <option value="trunk">Trunk</option>
-          <option value="lower-body">Lower Body</option>
-        </select>
-        <div class="region-menu">
-          <button class="region-option active" data-region="upper-body">Upper Body</button>
-          <button class="region-option" data-region="trunk">Trunk</button>
-          <button class="region-option" data-region="lower-body">Lower Body</button>
-        </div>
-      </section>
-
       <section class="scoreboard" aria-live="polite">
         <div><strong>Score:</strong> <span id="score">0</span></div>
         <div><strong>Streak:</strong> <span id="streak">0</span></div>
@@ -187,6 +174,18 @@
             <img id="asanaImg" class="banner-image" alt="" hidden />
             <div id="reviewPane" aria-live="polite"></div>
           </div>
+          <section class="focus-region-selector">
+            <select id="focusDropdown" class="region-dropdown" aria-label="Focus Region" hidden>
+              <option value="upper-body">Upper Body</option>
+              <option value="trunk">Trunk</option>
+              <option value="lower-body">Lower Body</option>
+            </select>
+            <div class="region-menu">
+              <button class="region-option active" data-region="upper-body">Upper Body</button>
+              <button class="region-option" data-region="trunk">Trunk</button>
+              <button class="region-option" data-region="lower-body">Lower Body</button>
+            </div>
+          </section>
         </div>
 
         <form id="answers" class="answers" aria-label="Answer options">
