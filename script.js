@@ -255,7 +255,7 @@ const ASANA_DATA = [
     quizOptions: [
       {
         id: "A",
-        text: "Shoulder flexion ~180°, scapular upward rotation and elevation, elbows flexed, wrists dorsiflexed.",
+        text: "Shoulder flexion ~180°, scapular upward rotation and elevation, forearms on floor, elbows flexed, wrists dorsiflexed.",
         correct: true,
       },
       {
