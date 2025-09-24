@@ -255,7 +255,7 @@ const ASANA_DATA = [
     quizOptions: [
       {
         id: "A",
-        text: "Shoulder flexion ~180°, scapular upward rotation and elevation, forearms on floor, elbows flexed, wrists dorsiflexed.",
+        text: "Shoulder flexion ~180°, scapular upward rotation and elevation, elbows flexed, wrists dorsiflexed.",
         correct: true,
       },
       {
@@ -539,6 +539,7 @@ const state = {
   categorySequence: ["upper-body", "trunk", "lower-body"], // Order of categories
   currentCategoryIndex: 0, // Index in category sequence
   questionHistory: [], // Track all questions with category and correctness
+  showNextButton: false, // Show Next button in review mode
 };
 
 function resetSession(preserveTotalQuestions = false) {
@@ -549,6 +550,7 @@ function resetSession(preserveTotalQuestions = false) {
   state.streak = 0;
   state.bestStreak = 0;
   state.answered = false;
+  state.showNextButton = false; // Hide Next button in practice mode
   // Clear wrong answers only on full restart, not when changing region
   if (!preserveTotalQuestions) {
     state.wrongAnswersPool = [];
@@ -571,13 +573,8 @@ function resetSession(preserveTotalQuestions = false) {
   state.selectedRegion = state.currentCategory;
   
   updateScoreboard();
-  $("modeLabel").textContent = REGION_LABEL[state.currentCategory];
   
   // Update UI elements to reflect current category
-  document.querySelectorAll('.region-option').forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.region === state.currentCategory);
-  });
-  
   const dropdown = document.getElementById('focusDropdown');
   if (dropdown) {
     dropdown.value = state.currentCategory;
@@ -587,9 +584,7 @@ function resetSession(preserveTotalQuestions = false) {
   resetToImageView();
   
   $("summary").hidden = true;
-  $("card").hidden = false;
-  $("backToQuizBtn").hidden = true;
-  $("midReviewBtn").hidden = false;
+  document.querySelector('.main-content').hidden = false;
   
   renderCurrentQuestion();
 }
@@ -625,20 +620,20 @@ function startReview() {
 
   state.mode = "review";
   state.currentIndex = 0;
+  state.showNextButton = true; // Show Next button in review mode
   shuffleInPlace(state.wrongAnswersPool);
   
   // Reset to image view by default when starting review
   resetToImageView();
   
   $("summary").hidden = true;
-  $("card").hidden = false;
-  $("midReviewBtn").hidden = true; // NEW: Hide "Review wrong answers" button during review
-  $("backToQuizBtn").hidden = false; // NEW: Show "Back to Quiz" button
+  document.querySelector('.main-content').hidden = false;
   renderReviewQuestion();
 }
 
 function finishSession() {
-  $("card").hidden = true;
+  state.showNextButton = false; // Hide Next button when finishing session
+  document.querySelector('.main-content').hidden = true;
   $("summary").hidden = false;
   $("finalScore").textContent = String(state.score);
   $("finalBestStreak").textContent = String(state.bestStreak);
@@ -649,10 +644,23 @@ function finishSession() {
 function resetToImageView() {
   // Reset to image view by default - helper function to avoid code duplication
   try {
-    $('reviewPane').style.display = 'none';
-    $('asanaImg').style.display = 'block';
-    $('asanaImg').hidden = false;
-    $('toggleMediaBtn').textContent = 'Text';
+    const reviewPane = $('reviewPane');
+    const asanaImg = $('asanaImg');
+    const textToggle = $('textToggle');
+    const imageToggle = $('imageToggle');
+    
+    if (reviewPane) {
+      reviewPane.style.display = 'none';
+      reviewPane.hidden = true;
+    }
+    if (asanaImg) {
+      asanaImg.style.display = 'block';
+      asanaImg.hidden = false;
+    }
+    if (textToggle && imageToggle) {
+      textToggle.classList.remove('active');
+      imageToggle.classList.add('active');
+    }
   } catch (_) {
     // ignore if elements not found
   }
@@ -668,6 +676,13 @@ function updateScoreboard() {
   const remainingQuestions = state.maxTotalQuestions - state.totalQuestionsAnswered;
   questionsCounter.textContent = String(state.totalQuestionsAnswered) + "/36";
   
+  // Update progress bar
+  const progressFill = document.querySelector('.progress-fill');
+  if (progressFill) {
+    const progressPercentage = (state.totalQuestionsAnswered / state.maxTotalQuestions) * 100;
+    progressFill.style.width = progressPercentage + '%';
+  }
+  
   // Add visual warning when approaching limit
   questionsCounter.className = "";
   if (remainingQuestions <= 3) {
@@ -677,10 +692,6 @@ function updateScoreboard() {
   }
   
   
-  // Update mid-session review button state
-  const hasWrongAnswers = state.wrongAnswersPool.length > 0;
-  $("midReviewBtn").disabled = !hasWrongAnswers;
-  console.log("updateScoreboard: wrongAnswersPool length:", state.wrongAnswersPool.length, "button disabled:", !hasWrongAnswers);
 }
 
 function getAsanaById(id) {
@@ -726,33 +737,46 @@ function renderCurrentQuestion() {
     finishSession();
     return;
   }
-  // ensure two-column layout (image left, text right)
-  $("card").classList.add("two-col");
+  
   // track frequency of asanas shown
   state.seenCounts[asana.id] = (state.seenCounts[asana.id] || 0) + 1;
   // Lock in current asana id in case not set
   state.currentAsanaId = asana.id;
   $("asanaName").textContent = buildCombinedTitle(asana.name);
+  
+  // Show image by default
   const img = $("asanaImg");
+  const reviewPane = $("reviewPane");
   img.hidden = false;
   img.style.display = 'block';
+  if (reviewPane) {
+    reviewPane.hidden = true;
+    reviewPane.style.display = 'none';
+  }
   img.alt = asana.name;
   img.onerror = function firstError() {
+    console.log(`Failed to load image: images/${asana.id}.jpg`);
     // Try a project-level placeholder file if present; otherwise use inline data URL
     img.onerror = function secondError() {
+      console.log(`Failed to load placeholder image: images/placeholder.jpg`);
       img.onerror = null;
       img.src = IMG_PLACEHOLDER_DATA_URL;
     };
     img.src = `images/placeholder.jpg`;
   };
   img.src = `images/${asana.id}.jpg`;
+  console.log(`Loading image: images/${asana.id}.jpg`);
+  
+  // Add a fallback to show placeholder if image doesn't load within 3 seconds
+  setTimeout(() => {
+    if (!img.complete || img.naturalHeight === 0) {
+      console.log(`Image loading timeout, using placeholder for: ${asana.id}`);
+      img.src = `images/placeholder.jpg`;
+    }
+  }, 3000);
+  
   const answersEl = $("answers");
   answersEl.innerHTML = "";
-  $("feedback").textContent = "";
-  $("feedback").className = "feedback";
-  $("explanations").innerHTML = "";
-  $("submitBtn").hidden = false;
-  $("nextBtn").hidden = true;
   state.answered = false;
 
   // Use the current category for the question
@@ -765,12 +789,13 @@ function renderCurrentQuestion() {
     wrapper.className = "answer";
     wrapper.innerHTML = html`
       <input type="radio" name="answer" value="${opt.id}" id="${id}" />
-      <div>
+      <div class="answer-text">
         <div><strong>${placementLabel}.</strong> ${opt.text}</div>
       </div>
     `;
     answersEl.appendChild(wrapper);
   });
+  
   // Auto-grade on selection
   answersEl.addEventListener(
     "change",
@@ -790,37 +815,41 @@ function renderReviewQuestion() {
 
   $("asanaName").textContent = buildCombinedTitle(asana.name);
   const img = $("asanaImg");
+  const reviewPane = $("reviewPane");
   img.hidden = false;
   img.style.display = 'block';
+  if (reviewPane) {
+    reviewPane.hidden = true;
+    reviewPane.style.display = 'none';
+  }
   img.alt = asana.name;
   img.onerror = function firstError() {
+    console.log(`Failed to load image: images/${asana.id}.jpg`);
     img.onerror = function secondError() {
+      console.log(`Failed to load placeholder image: images/placeholder.jpg`);
       img.onerror = null;
       img.src = IMG_PLACEHOLDER_DATA_URL;
     };
     img.src = `images/placeholder.jpg`;
   };
   img.src = `images/${asana.id}.jpg`;
+  console.log(`Loading image: images/${asana.id}.jpg`);
+  
+  // Add a fallback to show placeholder if image doesn't load within 3 seconds
+  setTimeout(() => {
+    if (!img.complete || img.naturalHeight === 0) {
+      console.log(`Image loading timeout, using placeholder for: ${asana.id}`);
+      img.src = `images/placeholder.jpg`;
+    }
+  }, 3000);
 
   const answersEl = $("answers");
   answersEl.innerHTML = "";
-  $("feedback").textContent = "Reviewing your incorrect answers.";
-  $("feedback").className = "feedback";
-  $("explanations").innerHTML = "";
-  $("submitBtn").hidden = true;
-  $("nextBtn").hidden = false;
-  // ensure two-column layout in review mode
-  $("card").classList.add("two-col");
 
   // Use the category saved at the time of the wrong answer; fallback to current
   const reviewCategory = reviewItem.category || state.currentCategory;
   // Reflect the category in the UI without mutating currentCategory
   try {
-    $("modeLabel").textContent = REGION_LABEL[reviewCategory] || REGION_LABEL[state.currentCategory];
-    document.querySelectorAll('.region-option').forEach(btn => {
-      btn.classList.toggle('active', btn.dataset.region === reviewCategory);
-    });
-    
     // Update dropdown menu
     const dropdown = document.getElementById('focusDropdown');
     if (dropdown) {
@@ -842,7 +871,7 @@ function renderReviewQuestion() {
 
     wrapper.innerHTML = html`
       <input type="radio" name="answer" value="${opt.id}" id="${id}" disabled />
-      <div>
+      <div class="answer-text">
         <div><strong>${placementLabel}.</strong> ${opt.text}</div>
       </div>
     `;
@@ -850,6 +879,18 @@ function renderReviewQuestion() {
   });
 
   showExplanationsForCorrectText(reviewItem.correctOption.text);
+  
+  // Update Next button visibility and text
+  const nextBtn = $("nextReviewBtn");
+  if (nextBtn) {
+    nextBtn.hidden = !state.showNextButton;
+    if (state.showNextButton) {
+      // Check if this is the last review question
+      const isLastQuestion = state.currentIndex >= state.wrongAnswersPool.length - 1;
+      nextBtn.textContent = isLastQuestion ? "Finish Review" : "Next";
+      nextBtn.disabled = false;
+    }
+  }
 }
 
 function parseTermsFromText(text) {
@@ -898,7 +939,9 @@ function parseTermsFromText(text) {
 }
 
 function showExplanationsForCorrectText(correctText) {
-  const container = $("explanations");
+  const container = $("reviewPane");
+  if (!container) return;
+  
   container.innerHTML = "";
   
   const terms = parseTermsFromText(correctText);
@@ -1009,20 +1052,19 @@ function playSound(sound) {
 }
 
 function selectAnswerAndGrade() {
+  console.log("selectAnswerAndGrade called, state.answered:", state.answered);
   if (state.answered) {
+    console.log("Already answered, returning");
     return; // already graded
   }
   const asana = currentAsana();
   const form = $("answers");
   const choice = form.querySelector('input[name="answer"]:checked');
   if (!choice) {
-    // Nudge UI but do not alert
-    $("submitBtn").animate([{ transform: "scale(1.0)" }, { transform: "scale(1.03)" }], {
-      duration: 120,
-      easing: "ease-out",
-    });
-        return;
+    console.log("No choice selected");
+    return;
   }
+  console.log("Choice selected:", choice.value);
   const chosenId = choice.value;
   
   // CRITICAL FIX: Use the region-specific options that are actually displayed
@@ -1048,8 +1090,6 @@ function selectAnswerAndGrade() {
   }
 
   state.answered = true;
-  $("submitBtn").hidden = true;
-  $("nextBtn").hidden = false;
 
   // Increment counters
   state.totalQuestionsAnswered += 1;
@@ -1070,17 +1110,10 @@ function selectAnswerAndGrade() {
     state.score += 10;
     state.streak += 1;
     state.bestStreak = Math.max(state.bestStreak, state.streak);
-    $("feedback").textContent = "Correct!";
-    $("feedback").className = "feedback correct";
-    $("explanations").innerHTML = "";
     // Play correct answer sound
     playSound(CORRECT_SOUND);
-    // keep two-column layout; nothing to change on correct
   } else {
     state.streak = 0;
-    // Only indicate incorrect; correct answer is already highlighted below
-    $("feedback").textContent = "Incorrect.";
-    $("feedback").className = "feedback incorrect";
     // Play incorrect answer sound
     playSound(INCORRECT_SOUND);
     state.wrongAnswersPool.push({
@@ -1089,12 +1122,12 @@ function selectAnswerAndGrade() {
       correctOption,
       category: state.currentCategory, // store category at time of answer
     });
-    // keep two-column layout (image left, explanations right)
-    $("card").classList.add("two-col");
     showExplanationsForCorrectText(correctOption.text);
   }
 
   updateScoreboard();
+  
+  onNext();
 }
 
 // NEW: Function to return to the paused practice quiz
@@ -1126,125 +1159,132 @@ function backToQuiz() {
   }
 
   state.mode = "practice";
+  state.showNextButton = false; // Hide Next button when returning to practice
   
   // Reset to image view by default when returning to quiz
   resetToImageView();
   
-  $("midReviewBtn").hidden = false; // Show "Review wrong answers" button
-  $("backToQuizBtn").hidden = true; // Hide "Back to Quiz" button
   $("summary").hidden = true;
-  $("card").hidden = false;
+  document.querySelector('.main-content').hidden = false;
   updateScoreboard();
   renderCurrentQuestion(); // Render the question that was active before review
 }
 
-function onNext() {
-  if (state.mode === 'review') {
-    // Reset to image view by default when moving to next review question
-    resetToImageView();
-    
-    state.currentIndex++;
-    if (state.currentIndex < state.wrongAnswersPool.length) {
-      renderReviewQuestion();
-    } else {
-      // Review session complete
-      state.mode = 'practice'; // Set mode back to practice
-      if (state.pausedPracticeState) {
-        // If there was a paused practice session, resume it
-        backToQuiz();
-      } else {
-        // If no paused session (i.e., review was started from summary), finish as usual
-        finishSession();
-      }
-    }
+function handleNextReview() {
+  if (state.mode !== 'review') {
+    console.warn("handleNextReview called but not in review mode");
     return;
   }
-
-  // Reset to image view by default
+  
+  // Reset to image view by default when moving to next review question
   resetToImageView();
+  
+  state.currentIndex++;
+  if (state.currentIndex < state.wrongAnswersPool.length) {
+    renderReviewQuestion();
+  } else {
+    // Review session complete
+    state.mode = 'practice';
+    state.showNextButton = false; // Hide Next button
+    if (state.pausedPracticeState) {
+      // If there was a paused practice session, resume it
+      backToQuiz();
+    } else {
+      // If no paused session (i.e., review was started from summary), finish as usual
+      finishSession();
+    }
+  }
+}
 
-  // Consume the current asana from the remaining queue
-  if (state.currentAsanaId && state.remainingAsanaIds.length > 0 && state.remainingAsanaIds[0] === state.currentAsanaId) {
-    state.remainingAsanaIds.shift();
-  }
-  state.currentAsanaId = null;
-  
-  // Check if total question limit has been reached
-  if (state.totalQuestionsAnswered >= state.maxTotalQuestions) {
-    finishSession();
-    return;
-  }
-  
-  // Check if we've completed 12 questions in the current category
-  if (state.questionsInCurrentCategory >= state.maxQuestionsPerCategory) {
-    // Mark current category as completed
-    state.completedRegions.add(state.currentCategory);
+function onNext() {
+  setTimeout(() => {
+    console.log(`onNext called. questionsInCurrentCategory: ${state.questionsInCurrentCategory}, currentCategory: ${state.currentCategory}`);
+    if (state.mode === 'review') {
+      // In review mode, auto-progression is disabled - user must use Next button
+      console.log("Auto-progression disabled in review mode - use Next button");
+      return;
+    }
+
+    // Reset to image view by default
+    resetToImageView();
+
+    // Consume the current asana from the remaining queue
+    if (state.currentAsanaId && state.remainingAsanaIds.length > 0 && state.remainingAsanaIds[0] === state.currentAsanaId) {
+      state.remainingAsanaIds.shift();
+    }
+    state.currentAsanaId = null;
     
-    // Check if all categories have been completed
-    if (state.completedRegions.size >= state.categorySequence.length) {
-      // All categories completed - finish the session
+    // Check if total question limit has been reached
+    if (state.totalQuestionsAnswered >= state.maxTotalQuestions) {
       finishSession();
       return;
     }
     
-    // Move to next category
-    state.currentCategoryIndex = (state.currentCategoryIndex + 1) % state.categorySequence.length;
-    state.currentCategory = state.categorySequence[state.currentCategoryIndex];
-    state.selectedRegion = state.currentCategory;
-    state.questionsInCurrentCategory = 0;
-    
-    // Reset remaining asanas for new category
-    state.remainingAsanaIds = shuffleInPlace(ASANA_DATA.map((a) => a.id));
-    
-    // Show notification about category change
-    const currentCategoryName = REGION_LABEL[state.currentCategory];
-    $("feedback").textContent = `Switching to ${currentCategoryName} category`;
-    $("feedback").className = "feedback correct";
-    
-    // Update UI to reflect new category
-    $("modeLabel").textContent = currentCategoryName;
-    
-    // Update pill buttons
-    document.querySelectorAll('.region-option').forEach(btn => {
-      btn.classList.toggle('active', btn.dataset.region === state.currentCategory);
-    });
-    
-    // Update dropdown menu
-    const dropdown = document.getElementById('focusDropdown');
-    if (dropdown) {
-      dropdown.value = state.currentCategory;
+    // Check if we've completed 12 questions in the current category
+    if (state.questionsInCurrentCategory >= state.maxQuestionsPerCategory) {
+      console.log('Switching category...');
+      // Mark current category as completed
+      state.completedRegions.add(state.currentCategory);
+      
+      // Check if all categories have been completed
+      if (state.completedRegions.size >= state.categorySequence.length) {
+        // All categories completed - finish the session
+        finishSession();
+        return;
+      }
+      
+      // Move to next uncompleted category
+      let nextCategoryIndex = state.currentCategoryIndex;
+      do {
+        nextCategoryIndex = (nextCategoryIndex + 1) % state.categorySequence.length;
+      } while (state.completedRegions.has(state.categorySequence[nextCategoryIndex]));
+      
+      state.currentCategoryIndex = nextCategoryIndex;
+      state.currentCategory = state.categorySequence[state.currentCategoryIndex];
+      state.selectedRegion = state.currentCategory;
+      state.questionsInCurrentCategory = 0;
+      
+      // Reset remaining asanas for new category
+      state.remainingAsanaIds = shuffleInPlace(ASANA_DATA.map((a) => a.id));
+      
+      // Show notification about category change
+      const currentCategoryName = REGION_LABEL[state.currentCategory];
+      // $("feedback").textContent = `Switching to ${currentCategoryName} category`;
+      // $("feedback").className = "feedback correct";
+      
+      // Update UI to reflect new category
+      // $("modeLabel").textContent = currentCategoryName;
+      
+      // Update pill buttons
+      document.querySelectorAll('.region-option').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.region === state.currentCategory);
+      });
+      
+      // Update dropdown menu
+      const dropdown = document.getElementById('focusDropdown');
+      if (dropdown) {
+        dropdown.value = state.currentCategory;
+      }
+      
+      // Small delay to show the message before continuing
+      setTimeout(() => {
+        renderCurrentQuestion();
+      }, 1500);
+      return;
     }
     
-    // Small delay to show the message before continuing
-    setTimeout(() => {
+    // Continue with current category
+    if (state.remainingAsanaIds.length > 0) {
       renderCurrentQuestion();
-    }, 1500);
-    return;
-  }
-  
-  // Continue with current category
-  if (state.remainingAsanaIds.length > 0) {
-    renderCurrentQuestion();
-    return;
-  }
-  
-  // No more asanas available - finish the session
-  finishSession();
+      return;
+    }
+    
+    // No more asanas available - finish the session
+    finishSession();
+  }, 2000);
 }
 
 function wireEvents() {
-  $("submitBtn").addEventListener("click", (e) => {
-    e.preventDefault();
-    selectAnswerAndGrade();
-  });
-  $("nextBtn").addEventListener("click", (e) => {
-    e.preventDefault();
-    onNext();
-  });
-  $("restartBtn").addEventListener("click", (e) => {
-    e.preventDefault();
-    resetSession();
-  });
   $("summaryRestartBtn").addEventListener("click", (e) => {
     e.preventDefault();
     resetSession();
@@ -1254,43 +1294,45 @@ function wireEvents() {
     startReview();
   });
 
-  // NEW: Event listener for "Review wrong answers" button (mid-session)
-  const midReviewBtn = $("midReviewBtn");
-  if (midReviewBtn) {
-    console.log("Found midReviewBtn, adding event listener");
-    midReviewBtn.addEventListener("click", (e) => {
-      e.preventDefault();
-      console.log("Review button clicked, wrongAnswersPool length:", state.wrongAnswersPool.length);
-      startReview();
-    });
-  } else {
-    console.error("midReviewBtn not found in DOM");
-  }
-
-  // NEW: Event listener for "Back to Quiz" button
-  $("backToQuizBtn").addEventListener("click", (e) => {
+  // Event listener for "Next" button in review mode
+  $("nextReviewBtn").addEventListener("click", (e) => {
     e.preventDefault();
-    backToQuiz();
+    handleNextReview();
   });
 
-  
+  // Text/Image toggle functionality
+  const textToggle = $("textToggle");
+  const imageToggle = $("imageToggle");
+  const asanaImg = $("asanaImg");
+  const reviewPane = $("reviewPane");
 
-  // Add focus region selection event handlers for pill buttons
-  document.querySelectorAll('.region-option').forEach(button => {
-    button.addEventListener('click', (e) => {
+  if (textToggle && imageToggle && asanaImg && reviewPane) {
+    textToggle.addEventListener("click", (e) => {
       e.preventDefault();
-      const newRegion = button.dataset.region;
+      // Show text pane, hide image
+      asanaImg.hidden = true;
+      asanaImg.style.display = 'none';
+      reviewPane.hidden = false;
+      reviewPane.style.display = 'block';
       
-      // Check if changing region during an active session
-      if (state.currentIndex > 0 || state.answered) {
-        if (confirm('Changing the focus region will restart the current session. Continue?')) {
-          changeFocusRegion(newRegion);
-        }
-      } else {
-        changeFocusRegion(newRegion);
-      }
+      // Update button states
+      textToggle.classList.add('active');
+      imageToggle.classList.remove('active');
     });
-  });
+
+    imageToggle.addEventListener("click", (e) => {
+      e.preventDefault();
+      // Show image, hide text pane
+      asanaImg.hidden = false;
+      asanaImg.style.display = 'block';
+      reviewPane.hidden = true;
+      reviewPane.style.display = 'none';
+      
+      // Update button states
+      imageToggle.classList.add('active');
+      textToggle.classList.remove('active');
+    });
+  }
 
   // Add dropdown event handler
   const dropdown = document.getElementById('focusDropdown');
@@ -1341,6 +1383,7 @@ function changeFocusRegion(newRegion) {
   // Update the selected region and current category
   state.selectedRegion = newRegion;
   state.currentCategory = newRegion;
+  state.questionsInCurrentCategory = 0; // Reset category question count
   
   // Find the index of the new region in the category sequence
   const newIndex = state.categorySequence.indexOf(newRegion);
@@ -1350,17 +1393,6 @@ function changeFocusRegion(newRegion) {
   
   // Persist selection
   try { localStorage.setItem("anatomator:selectedRegion", newRegion); } catch (_) {}
-  
-  // Update the mode label
-  $("modeLabel").textContent = REGION_LABEL[newRegion];
-  
-  // Update the active button state
-  document.querySelectorAll('.region-option').forEach(btn => {
-    btn.classList.remove('active');
-    if (btn.dataset.region === newRegion) {
-      btn.classList.add('active');
-    }
-  });
   
   // Update dropdown menu
   const dropdown = document.getElementById('focusDropdown');
@@ -1412,12 +1444,6 @@ window.addEventListener("DOMContentLoaded", () => {
       if (savedIndex !== -1) {
         state.currentCategoryIndex = savedIndex;
       }
-      // Reflect active state on buttons and label
-      document.querySelectorAll('.region-option').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.region === savedRegion);
-      });
-      $("modeLabel").textContent = REGION_LABEL[savedRegion];
-      
       // Update dropdown menu
       const dropdown = document.getElementById('focusDropdown');
       if (dropdown) {

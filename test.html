@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anatomator Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; border-radius: 5px; }
+        .test-result { margin: 10px 0; padding: 10px; border-radius: 3px; }
+        .pass { background-color: #d4edda; color: #155724; }
+        .fail { background-color: #f8d7da; color: #721c24; }
+        button { padding: 10px 15px; margin: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>Anatomator Quiz Test</h1>
+    
+    <div class="test-section">
+        <h2>Test Instructions</h2>
+        <p>This test verifies the three-category cycling system with 12 questions per category (36 total).</p>
+        <ol>
+            <li>Click "Start Test" to begin the quiz</li>
+            <li>Answer questions and observe category progression</li>
+            <li>Verify that categories cycle: Upper Body → Trunk → Lower Body → Upper Body</li>
+            <li>Check that exactly 12 questions are asked per category</li>
+            <li>Verify wrong answers are tracked with category information</li>
+        </ol>
+    </div>
+
+    <div class="test-section">
+        <h2>Test Controls</h2>
+        <button onclick="startTest()">Start Test</button>
+        <button onclick="checkProgress()">Check Progress</button>
+        <button onclick="showResults()">Show Results</button>
+        <button onclick="resetTest()">Reset Test</button>
+    </div>
+
+    <div class="test-section">
+        <h2>Test Results</h2>
+        <div id="testResults"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Live Quiz</h2>
+        <iframe src="index.html" width="100%" height="600" style="border: 1px solid #ccc;"></iframe>
+    </div>
+
+    <script>
+        let testData = {
+            questionsAnswered: 0,
+            categoryProgress: {},
+            wrongAnswers: [],
+            startTime: null
+        };
+
+        function startTest() {
+            testData = {
+                questionsAnswered: 0,
+                categoryProgress: { 'upper-body': 0, 'trunk': 0, 'lower-body': 0 },
+                wrongAnswers: [],
+                startTime: Date.now()
+            };
+            addResult('Test started. Please answer questions in the quiz above.', 'pass');
+        }
+
+        function checkProgress() {
+            // This would need to be implemented with actual quiz state access
+            addResult('Progress check not implemented - would need access to quiz state', 'fail');
+        }
+
+        function showResults() {
+            const duration = testData.startTime ? ((Date.now() - testData.startTime) / 1000).toFixed(1) : 0;
+            let results = `<h3>Test Results (${duration}s)</h3>`;
+            results += `<p><strong>Questions Answered:</strong> ${testData.questionsAnswered}/36</p>`;
+            results += `<p><strong>Category Progress:</strong></p>`;
+            results += `<ul>`;
+            for (const [category, count] of Object.entries(testData.categoryProgress)) {
+                results += `<li>${category}: ${count}/12</li>`;
+            }
+            results += `</ul>`;
+            results += `<p><strong>Wrong Answers:</strong> ${testData.wrongAnswers.length}</p>`;
+            
+            document.getElementById('testResults').innerHTML = results;
+        }
+
+        function resetTest() {
+            testData = {
+                questionsAnswered: 0,
+                categoryProgress: { 'upper-body': 0, 'trunk': 0, 'lower-body': 0 },
+                wrongAnswers: [],
+                startTime: null
+            };
+            document.getElementById('testResults').innerHTML = '';
+            addResult('Test reset.', 'pass');
+        }
+
+        function addResult(message, type) {
+            const resultsDiv = document.getElementById('testResults');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `test-result ${type}`;
+            resultDiv.innerHTML = `<strong>${new Date().toLocaleTimeString()}:</strong> ${message}`;
+            resultsDiv.appendChild(resultDiv);
+        }
+
+        // Auto-start test
+        startTest();
+    </script>
+</body>
+</html>

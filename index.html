@@ -4,318 +4,77 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Anatomator – Yoga Anatomy Quiz</title>
-    <link rel="stylesheet" href="styles.css" />
-    <style>
-      /* Mobile-first compact layout */
-      :root {
-        --space-xs: 4px;
-        --space-sm: 6px;
-        --space-md: 8px;
-        --font-xs: 12px;
-        --font-sm: 13px;
-        --font-md: 15px;
-        --font-lg: 18px;
-        --touch-min: 44px;
-      }
-
-      body {
-        max-width: 100%;
-        margin: 0 auto;
-        padding: 0 10px;
-      }
-      
-      .container {
-        max-width: 800px;
-        margin: 0 auto;
-        width: 100%;
-      }
-
-      body, .container, section, .card, .controls, .actions, .details {
-        margin: var(--space-sm) !important;
-        padding: var(--space-sm) !important;
-      }
-
-      .container { 
-        padding-top: var(--space-md) !important; 
-        width: 100%;
-        box-sizing: border-box;
-      }
-      
-      .card {
-        width: 100%;
-        box-sizing: border-box;
-      }
-
-      h1, h2, h3, h4 { margin: var(--space-sm) 0 !important; }
-      h1 { font-size: 1.2rem; }
-      h2 { font-size: var(--font-lg); }
-      h3 { font-size: var(--font-md); }
-      h4 { font-size: var(--font-sm); }
-      p, label, .scoreboard, button { font-size: var(--font-sm); }
-
-      /* Scoreboard as responsive header */
-      .scoreboard {
-        display: flex;
-        align-items: center;
-        gap: var(--space-md);
-        flex-wrap: wrap;
-        padding: var(--space-xs) var(--space-sm) !important;
-        margin-top: 0 !important;
-        min-height: 44px;
-      }
-      .scoreboard > div { 
-        white-space: nowrap; 
-        flex-shrink: 0;
-        min-width: fit-content;
-      }
-      .scoreboard strong { font-weight: 600; }
-      
-      /* Responsive scoreboard on small screens */
-      @media (max-width: 768px) {
-        .scoreboard {
-          gap: var(--space-sm);
-          overflow-x: auto;
-          flex-wrap: nowrap;
-          padding-bottom: 8px;
-        }
-        .scoreboard > div {
-          flex-shrink: 0;
-        }
-      }
-      
-
-      /* Focus region selector: horizontal pill buttons */
-      .focus-region-selector label { display: none; }
-      .region-menu {
-        display: flex;
-        gap: var(--space-sm);
-      }
-      .region-menu .region-option {
-        padding: 6px 10px !important;
-        border-radius: 999px !important;
-        border: 1px solid #ccc;
-        background: #f8f8f8;
-        min-height: var(--touch-min);
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-      }
-      .region-menu .region-option.active { background: #e8f0fe; border-color: #9bb2f5; }
-
-      /* Show dropdown by default, hide pill menu */
-      .region-dropdown { 
-        width: 100%; 
-        min-height: var(--touch-min); 
-        padding: 8px !important; 
-        display: block;
-        border: 1px solid #ccc;
-        border-radius: 4px;
-        background: #f8f8f8;
-        font-size: var(--font-sm);
-      }
-      .region-menu { display: none !important; }
-
-      /* Asana banner image responsive and collapsible */
-      .banner { 
-        display: flex; 
-        justify-content: center; 
-        align-items: center;
-        width: 100%; 
-        height: 300px !important; 
-        max-width: 100%;
-        background-color: white;
-      }
-      .banner-image {
-        max-width: 100% !important;
-        max-height: 100%;
-        width: auto;
-        height: auto;
-        object-fit: contain;
-        border-radius: 6px;
-        display: block;
-        margin: 0 auto;
-      }
-      
-      /* Responsive banner sizing */
-      @media (min-width: 600px) {
-        .banner { height: 350px !important; }
-      }
-      
-      @media (min-width: 900px) {
-        .banner { height: 400px !important; }
-      }
-      
-      @media (min-width: 1200px) {
-        .banner { height: 450px !important; }
-      }
-            .banner-image.collapsed { max-height: 20px !important; overflow: hidden; padding: 0 !important; margin: 0 !important; }
-
-      /* Review text pane that can replace the image */
-      #reviewPane { 
-        display: none; 
-        max-width: 100%; 
-        max-height: 100%; 
-        text-align: left; 
-        padding: 16px !important; 
-        background: white; 
-        border: 1px solid #ddd; 
-        border-radius: 6px;
-        overflow: auto; 
-        font-size: 12px; 
-        line-height: 1.35; 
-        color: #333;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-      }
-      #reviewPane > div { margin-bottom: 4px; }
-      #reviewPane strong { font-weight: 700; color: #000; }
-      .media-toggle { display: flex; justify-content: flex-end; margin-top: var(--space-xs); }
-      .media-toggle button { padding: 6px 10px !important; min-height: var(--touch-min); }
-
-      /* Answers: full-width, touch-friendly */
-      .answers { display: grid; gap: var(--space-sm); }
-      .answers button,
-      .answers label,
-      .answers .option {
-        display: block;
-        width: 100%;
-        min-height: var(--touch-min);
-        padding: 10px !important;
-        text-align: left;
-      }
-      /* Keep radio and text inline within each answer */
-      .answers label { display: flex !important; align-items: center; gap: 10px; }
-      .answers label input[type="radio"] { display: inline-block; margin: 0 8px 0 0; }
-      .answers label > * { vertical-align: middle; }
-
-      /* Actions: tighter; make Next sticky at bottom */
-      .actions { display: flex; gap: var(--space-sm); justify-content: space-between; }
-      #nextBtn {
-        position: fixed;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        width: 100%;
-        border-radius: 0;
-        padding: 14px 16px !important;
-        min-height: var(--touch-min);
-        z-index: 1000;
-      }
-      /* Hide submit visually; logic will be triggered programmatically */
-      #submitBtn { display: none !important; }
-      /* Give content some bottom padding so sticky button doesn't cover content */
-      main.container { padding-bottom: 64px !important; }
-
-      /* Controls (restart/review) more compact */
-      .controls { display: flex; gap: var(--space-sm); flex-wrap: wrap; }
-      .controls button { padding: 8px 10px !important; min-height: var(--touch-min); }
-
-      /* Hide right-side feedback/explanations block to save space */
-      .details { display: none !important; }
-      .feedback, .explanations { display: none !important; }
-
-      /* Hide any Mode label anywhere */
-      #modeLabel { display: none !important; }
-
-      /* General button sizing */
-      button.primary, button.secondary {
-        padding: 10px 12px !important;
-        min-height: var(--touch-min);
-      }
-
-      /* Responsive breakpoints */
-      @media (min-width: 1200px) {
-        .container {
-          max-width: 1000px;
-        }
-        .scoreboard {
-          gap: 20px;
-        }
-      }
-      
-      @media (min-width: 900px) {
-        .container {
-          max-width: 900px;
-        }
-        .scoreboard {
-          gap: 16px;
-        }
-      }
-      
-      @media (min-width: 600px) {
-        .container {
-          max-width: 700px;
-        }
-        .scoreboard {
-          gap: 14px;
-        }
-      }
-      
-      /* Ultra-compact on very small screens */
-      @media (max-width: 360px) {
-        :root { --font-xs: 11px; --font-sm: 12px; --font-md: 14px; --font-lg: 16px; }
-        .region-menu .region-option { padding: 4px 8px !important; }
-        .banner-image { max-width: 100% !important; }
-        .scoreboard {
-          gap: 6px;
-          padding: 4px 8px !important;
-        }
-      }
-    </style>
+    <link rel="stylesheet" href="style.css" />
   </head>
   <body>
-    <main class="container">
-      <section class="scoreboard" aria-live="polite">
-        <div><strong>Score:</strong> <span id="score">0</span></div>
-        <div><strong>Streak:</strong> <span id="streak">0</span></div>
-        <div><strong>Best Streak:</strong> <span id="bestStreak">0</span></div>
-        <div><strong>Questions:</strong> <span id="questionsCounter">0/36</span></div>
-        <div><span id="modeLabel">Upper Body</span></div>
-      </section>
-
-      <section class="controls">
-        <button id="toggleMediaBtn" class="secondary" type="button">Text</button>
-        <button id="restartBtn" class="secondary">Restart</button>
-        <button id="midReviewBtn" class="secondary">Review wrong answers</button>
-        <button id="backToQuizBtn" class="secondary" hidden>Back to Quiz</button>
-      </section>
-
-      <section id="card" class="card" aria-live="polite">
-        <div class="asana">
-          <h2 id="asanaName" class="asana-title">Loading…</h2>
-          <div class="banner">
-            <img id="asanaImg" class="banner-image" alt="" hidden />
-            <div id="reviewPane" aria-live="polite"></div>
+    <div class="app">
+      <!-- Header Section -->
+      <header class="header">
+        <div class="header-left">
+          <div class="score-info">
+            <div class="score-item">
+              <span class="label">Score:</span>
+              <span id="score" class="value">3</span>
+            </div>
+            <div class="progress-container">
+              <div class="progress-bar">
+                <div class="progress-fill" style="width: 25%"></div>
+              </div>
+            </div>
           </div>
-          <section class="focus-region-selector">
-            <select id="focusDropdown" class="region-dropdown" aria-label="Focus Region">
+          <div class="streak-info">
+            <div class="score-item">
+              <span class="label">Streak:</span>
+              <span id="streak" class="value">0</span>
+            </div>
+            <div class="score-item">
+              <span class="label">Best Streak:</span>
+              <span id="bestStreak" class="value">2</span>
+            </div>
+          </div>
+        </div>
+        <div class="header-right">
+          <div class="question-counter">
+            <span class="label">Questions:</span>
+            <span id="questionsCounter" class="value">7/36</span>
+          </div>
+        </div>
+      </header>
+
+      <!-- Main Content -->
+      <main class="main-content">
+        <div class="pose-section">
+          <div class="pose-header">
+            <h1 id="asanaName" class="pose-name">Utkatasana</h1>
+            <div class="header-controls">
+              <button id="nextReviewBtn" class="next-btn" hidden>Next</button>
+              <div class="view-toggles">
+                <button id="textToggle" class="toggle-btn">Text</button>
+                <button id="imageToggle" class="toggle-btn active">Image</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="image-container">
+            <img id="asanaImg" class="pose-image" alt="" hidden />
+            <div id="reviewPane" class="text-pane" hidden></div>
+          </div>
+
+          <div class="context-dropdown">
+            <select id="focusDropdown" class="dropdown">
               <option value="upper-body">Upper Body</option>
               <option value="trunk">Trunk</option>
               <option value="lower-body">Lower Body</option>
             </select>
-            <div class="region-menu">
-              <button class="region-option active" data-region="upper-body">Upper Body</button>
-              <button class="region-option" data-region="trunk">Trunk</button>
-              <button class="region-option" data-region="lower-body">Lower Body</button>
-            </div>
-          </section>
+          </div>
+
+          <form id="answers" class="answers">
+            <!-- Options will be injected here -->
+          </form>
         </div>
+      </main>
 
-        <form id="answers" class="answers" aria-label="Answer options">
-          <!-- Options injected here -->
-        </form>
-
-        <div class="actions">
-          <button id="submitBtn" class="primary">Submit</button>
-          <button id="prevBtn" class="secondary" hidden>Previous</button>
-          <button id="nextBtn" class="primary">Next</button>
-        </div>
-
-        <div class="details">
-          <div id="feedback" class="feedback" aria-live="polite"></div>
-          <div id="explanations" class="explanations" aria-live="polite"></div>
-        </div>
-      </section>
-
+      <!-- Summary Section -->
       <section id="summary" class="summary" hidden>
         <h3>Session Complete</h3>
         <p><strong>Final Score:</strong> <span id="finalScore">0</span></p>
@@ -327,154 +86,8 @@
         <h4>Asana Frequency</h4>
         <div id="freqMatrix" class="matrix" aria-live="polite"></div>
       </section>
-    </main>
+    </div>
 
     <script src="script.js"></script>
-    <script>
-      // Post-load mobile enhancements without touching core logic
-      (function () {
-        const asanaNameEl = document.getElementById('asanaName');
-        const asanaImg = document.getElementById('asanaImg');
-        const scoreboard = document.querySelector('.scoreboard');
-        const submitBtn = document.getElementById('submitBtn');
-        const nextBtn = document.getElementById('nextBtn');
-        const regionMenu = document.querySelector('.region-menu');
-        const regionButtons = Array.from(document.querySelectorAll('.region-option'));
-        const regionDropdown = document.getElementById('focusDropdown');
-        const reviewPane = document.getElementById('reviewPane');
-        const toggleMediaBtn = document.getElementById('toggleMediaBtn');
-
-        // 1) Keep only Sanskrit names like "Tadasana • Mountain Pose" -> "Tadasana"
-        function shortenTitle(text) {
-          if (!text) return text;
-          const dotIndex = text.indexOf('•');
-          if (dotIndex !== -1) {
-            const left = text.slice(0, dotIndex).trim();
-            return left || text;
-          }
-          // Also handle hyphen separated formats
-          const hyphenIndex = text.indexOf(' - ');
-          if (hyphenIndex !== -1) {
-            return text.slice(0, hyphenIndex).trim();
-          }
-          return text;
-        }
-
-        // Apply once on load; avoid observing to prevent loops/freezes
-        if (asanaNameEl) {
-          const applyShortTitle = () => {
-            const current = asanaNameEl.textContent || '';
-            const shortened = shortenTitle(current);
-            if (shortened !== current) {
-              asanaNameEl.textContent = shortened;
-            }
-          };
-          // Try a few times during initial load to catch async population
-          let tries = 0;
-          const timer = setInterval(() => {
-            applyShortTitle();
-            tries += 1;
-            if (tries >= 20) clearInterval(timer); // ~2s max
-          }, 100);
-        }
-
-        // 2) Make banner image collapsible/expandable on tap
-        if (asanaImg) {
-          asanaImg.addEventListener('click', () => {
-            asanaImg.classList.toggle('collapsed');
-          });
-          asanaImg.style.cursor = 'pointer';
-          asanaImg.title = 'Tap to collapse/expand';
-        }
-
-        // 3) Skip scoreboard relabeling to avoid interfering with core logic
-
-        // 4) Always show Next; use it to trigger submit when appropriate
-        if (nextBtn && submitBtn) {
-          nextBtn.addEventListener('click', (e) => {
-            // Always trigger the app's submit logic. If disabled, temporarily enable to fire click.
-            const wasDisabled = submitBtn.disabled;
-            if (wasDisabled) submitBtn.disabled = false;
-            try { submitBtn.click(); } catch (_) {}
-            if (wasDisabled) submitBtn.disabled = true;
-            e.preventDefault();
-          });
-        }
-
-        // 5) Replace region pills with a dropdown on small screens (non-intrusive)
-        if (regionDropdown && regionMenu) {
-          try {
-            const active = regionButtons.find((b) => b.classList.contains('active'));
-            if (active) regionDropdown.value = active.dataset.region;
-            regionDropdown.hidden = false;
-            regionMenu.classList.add('is-hidden');
-            regionDropdown.addEventListener('change', () => {
-              const btn = regionButtons.find((b) => b.dataset.region === regionDropdown.value);
-              if (btn) btn.dispatchEvent(new Event('click', { bubbles: true }));
-            });
-          } catch (_) {}
-        }
-
-        // 6) Text/Image toggle for review wrong answers to prevent overflow
-        function showReviewText(text) {
-          if (!reviewPane || !asanaImg) return;
-          // Normalize whitespace and dashes
-          const raw = (text || reviewPane.textContent || '').replace(/\s+/g, ' ').trim();
-
-          // Split into items like "Term — description" using a regex that
-          // finds a capitalized term followed by a dash and grabs until the next such term or end.
-          const itemRegex = /(\b[A-Z][A-Za-z()\s]*?)\s*[-–—]\s*([\s\S]*?)(?=(?:\b[A-Z][A-Za-z()\s]*?\s*[-–—]\s*)|$)/g;
-          const items = [];
-          let match;
-          while ((match = itemRegex.exec(raw)) !== null) {
-            const term = match[1].trim();
-            const desc = match[2].trim().replace(/\s+/g, ' ');
-            items.push({ term, desc });
-          }
-
-          // Fallback: if no items found, produce one line from raw
-          if (items.length === 0) {
-            reviewPane.textContent = raw;
-          } else {
-            const html = items
-              .map(({ term, desc }) => {
-                // Ensure an em dash and nice punctuation spacing
-                const dash = ' — ';
-                return `<div><strong>${term}</strong>${dash}${desc}</div>`;
-              })
-              .join('');
-            reviewPane.innerHTML = html;
-          }
-          // Hide image completely and show text with proper styling
-          asanaImg.style.display = 'none';
-          reviewPane.style.display = 'block';
-          if (toggleMediaBtn) toggleMediaBtn.textContent = 'Image';
-        }
-
-        function showImage() {
-          if (!reviewPane || !asanaImg) return;
-          // Hide text completely and show image
-          reviewPane.style.display = 'none';
-          asanaImg.style.display = 'block';
-          asanaImg.hidden = false;
-          if (toggleMediaBtn) toggleMediaBtn.textContent = 'Text';
-        }
-
-        if (toggleMediaBtn) {
-          toggleMediaBtn.addEventListener('click', () => {
-            const isShowingText = reviewPane && reviewPane.style.display !== 'none' && reviewPane.style.display !== '';
-            if (isShowingText) {
-              showImage();
-            } else {
-              // Prefer to reuse explanations or feedback content if available
-              const explanations = document.getElementById('explanations');
-              const feedback = document.getElementById('feedback');
-              const text = (explanations?.textContent || '').trim() || (feedback?.textContent || '').trim() || 'Review text unavailable.';
-              showReviewText(text);
-            }
-          });
-        }
-      })();
-    </script>
   </body>
-</html>
+</html>cd
